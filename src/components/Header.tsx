@@ -56,13 +56,6 @@ export default function Header({ activeSection, setActiveSection }: HeaderProps)
         <div className="flex items-center justify-between">
           {/* Logo Brand */}
           <div className="flex items-center space-x-3 cursor-pointer" onClick={() => scrollToSection('sobre-mi')}>
-            <img 
-              src="https://upload.wikimedia.org/wikipedia/commons/3/30/Logo_de_la_UMSNH.svg" 
-              alt="Escudo UMSNH" 
-              className="h-10 w-auto object-contain select-none"
-              referrerPolicy="no-referrer"
-            />
-            <div className="h-10 w-[1px] bg-slate-200" />
             <div>
               <span className="font-display font-semibold text-slate-900 text-sm tracking-wide block">
                 Dr. Erick Radaí Rojas

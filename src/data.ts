@@ -179,7 +179,7 @@ export const experience: ExperienceItem[] = [
     location: 'México',
     type: 'research',
     description: [
-      'Miembro de comités editoriales y árbitro dictaminador en revistas científicas indexadas de alto impacto (RIDE, Saber Más, Praxis Educativa ReDIE).',
+      'Miembro de comités editoriales y árbitro dictaminador en revistas científicas indexadas de alto impacto.',
       'Colaborador y revisor en el diseño técnico y metodológico de reactivos del certamen de ingreso EXAUM-I y EXAUM-II.',
       'Asesor metodológico y jurado examinador oficial en la sustentación de exámenes de grado de nivel medio superior y superior.'
     ],
@@ -207,7 +207,7 @@ export const experience: ExperienceItem[] = [
     description: [
       'Distinción y acreditación oficial honorífica por la trayectoria de aportación al desarrollo científico regional.',
       'Autor de más de 20 artículos indexados de alta calidad sobre didáctica matemática y aprendizaje de cálculo.',
-      'Evaluador y dictaminador habitual para revistas de excelencia académica y de divulgación como Saber Más y RIDE.'
+      'Evaluador y dictaminador habitual para revistas de excelencia académica y de divulgación.'
     ],
   },
   {

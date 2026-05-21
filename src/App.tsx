@@ -74,12 +74,6 @@ export default function App() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-slate-800 pb-8">
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
-                <img 
-                  src="https://upload.wikimedia.org/wikipedia/commons/3/30/Logo_de_la_UMSNH.svg" 
-                  alt="Escudo UMSNH" 
-                  className="h-8 w-auto object-contain"
-                  referrerPolicy="no-referrer"
-                />
                 <span className="font-display font-semibold text-white tracking-wide text-sm block">
                   Dr. Erick Radaí Rojas Maldonado
                 </span>
