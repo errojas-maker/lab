@@ -321,7 +321,7 @@ export default function InteractiveSandbox() {
             Laboratorio de Cálculo Virtual EDO-Derivadas
           </h2>
           <p className="mt-4 text-slate-500 font-normal text-sm max-w-3xl mx-auto">
-            Herramientas interactivas diseñadas por la línea de investigación didáctica del Dr. Erick para simplificar la transición cognitiva desde el límite elemental del cálculo hasta la resolución aproximada de problemas físicos reales.
+            Herramientas interactivas diseñadas por la línea de investigación didáctica del Dr. Erick Radaí para simplificar la transición cognitiva desde el límite elemental del cálculo hasta la resolución aproximada de problemas físicos reales.
           </p>
         </div>
 

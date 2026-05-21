@@ -25,7 +25,7 @@ export default function Hero({ setActiveSection }: HeroProps) {
     {
       label: 'Cursos Impartidos',
       value: '+140 Cursos',
-      subtext: 'Media Superior y Superior',
+      subtext: 'Media Superior, Superior y Posgrado',
       icon: <Award className="h-5 w-5 text-amber-500" />
     },
     {

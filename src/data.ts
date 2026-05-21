@@ -12,7 +12,7 @@ export const personalInfo = {
   scholar: 'https://scholar.google.com/citations?user=radai_rojas',
   researchGate: 'https://www.researchgate.net/profile/Erick_Rojas_Maldonado',
   phone: '+52 (443) 322-3500 ext. 4102',
-  avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=300&auto=format&fit=crop',
+  avatar: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?q=80&w=400&auto=format&fit=crop',
   bio: 'Profesor e Investigador Titular de la Universidad Michoacana de San Nicolás de Hidalgo (UMSNH), invitado en el Programa Institucional de Licenciatura en Biotecnología. Cuenta con más de 28 años de trayectoria docente, habiendo impartido más de 140 cursos a nivel medio superior, superior y posgrado. Es reconocido como Investigador Estatal Honorífico por el Instituto de Ciencia, Tecnología e Innovación (ICTI) del Gobierno del Estado de Michoacán de 2022 a la fecha.',
   objective: 'Desarrollar mi experiencia hacia la coordinación y organización de gestión académica mejorando los proyectos educativos institucionales y los procesos formativos que se vinculen con la sociedad y con los parámetros de la evaluación educativa internacional.',
   aptitudes: [
