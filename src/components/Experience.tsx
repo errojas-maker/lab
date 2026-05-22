@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { Briefcase, Laptop, Landmark, ChevronRight, Award, Trophy, Users } from 'lucide-react';
+import { Briefcase, Laptop, Landmark, ChevronRight, Award, Users } from 'lucide-react';
 import { experience } from '../data';
 
 export default function Experience() {
@@ -18,7 +18,6 @@ export default function Experience() {
   // Filter experiences
   const timelineExp = experience.filter(exp => exp.id !== 'exp_pifiems' && exp.id !== 'exp_vasco');
   const pifiemsExp = experience.find(exp => exp.id === 'exp_pifiems');
-  const vascoExp = experience.find(exp => exp.id === 'exp_vasco');
 
   return (
     <section id="trayectoria" className="py-24 bg-white border-b border-slate-100">
@@ -136,40 +135,7 @@ export default function Experience() {
               </motion.div>
             )}
 
-            {/* Vasco de Quiroga block */}
-            {vascoExp && (
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="bg-slate-50 rounded-2xl p-6 border border-slate-200/60 shadow-sm hover:shadow-md transition-all relative overflow-hidden"
-              >
-                <div className="absolute top-0 right-0 h-20 w-20 bg-amber-55/40 rounded-bl-full flex items-center justify-center pl-4 pb-4 select-none">
-                  <Trophy className="h-5 w-5 text-amber-600" />
-                </div>
-                
-                <span className="font-mono text-xs font-bold text-amber-655 bg-amber-50 px-2.5 py-1 rounded">
-                  {vascoExp.period}
-                </span>
-                
-                <h4 className="font-display font-bold text-lg text-slate-900 mt-4 leading-snug">
-                  {vascoExp.role}
-                </h4>
-                
-                <p className="font-display font-semibold text-xs text-slate-550 mt-1.5">
-                  {vascoExp.organization}
-                </p>
 
-                <ul className="mt-5 space-y-2.5 pt-4 border-t border-slate-200/50">
-                  {vascoExp.description.map((desc, dIdx) => (
-                    <li key={dIdx} className="text-xs text-slate-500 leading-relaxed flex items-start space-x-2">
-                      <ChevronRight className="h-3.5 w-3.5 text-amber-505 mt-0.5 flex-shrink-0" />
-                      <span>{desc}</span>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            )}
           </div>
         </div>
 

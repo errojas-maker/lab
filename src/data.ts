@@ -181,7 +181,6 @@ export const experience: ExperienceItem[] = [
     type: 'research',
     description: [
       'Miembro de comités editoriales y árbitro dictaminador en revistas científicas indexadas de alto impacto.',
-      'Colaborador y revisor en el diseño técnico y metodológico de reactivos del certamen de ingreso EXAUM-I y EXAUM-II.',
       'Asesor metodológico y jurado examinador oficial en la sustentación de exámenes de grado de nivel superior.'
     ],
   },
@@ -231,18 +230,6 @@ export const experience: ExperienceItem[] = [
     description: [
       'Dirección de estrategias pedagógicas orientadas a despertar tempranamente la vocación científica y tecnológica en estudiantes de bachillerato.',
       'Vinculación institucional de alumnos sobresalientes con grupos de investigadores y académicos nicolaitas.'
-    ],
-  },
-  {
-    id: 'exp_vasco',
-    role: 'Postulado a la Presea Vasco de Quiroga',
-    organization: 'Colegio Primitivo y Nacional de San Nicolás de Hidalgo - UMSNH',
-    period: '2012',
-    location: 'Morelia, Michoacán, México',
-    type: 'academic',
-    description: [
-      'Postulación honorífica propuesta directamente por los Consejeros Técnicos Alumnos del bachillerato en reconocimiento a la Trayectoria Destacada en Bachillerato.',
-      'Reconocimiento estudiantil en honor a la calidad moral, pedagogía de excelencia y compromiso de servicio hacia la comunidad escolar nicolaíta.'
     ],
   },
   {
