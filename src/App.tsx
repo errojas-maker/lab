@@ -9,6 +9,7 @@ import InteractiveSandbox from './components/InteractiveSandbox';
 import Contact from './components/Contact';
 import { ArrowUp, Award, ExternalLink, GraduationCap, Mail } from 'lucide-react';
 import { personalInfo } from './data';
+import escudoImg from './escudo.svg';
 
 export default function App() {
   const [activeSection, setActiveSection] = useState('sobre-mi');
@@ -72,15 +73,23 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-slate-800 pb-8">
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <span className="font-display font-semibold text-white tracking-wide text-sm block">
-                  Dr. Erick Radaí Rojas Maldonado
-                </span>
+            <div className="flex items-start space-x-4">
+              <img 
+                src={escudoImg}
+                alt="Escudo UMSNH" 
+                className="h-14 w-auto brightness-95 opacity-85 hover:opacity-100 transition-opacity select-none"
+                referrerPolicy="no-referrer"
+              />
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <span className="font-display font-semibold text-white tracking-wide text-sm block">
+                    Dr. Erick Radaí Rojas Maldonado
+                  </span>
+                </div>
+                <p className="max-w-md text-slate-500">
+                  Profesor e Investigador Titular de la Universidad Michoacana de San Nicolás de Hidalgo.
+                </p>
               </div>
-              <p className="max-w-md text-slate-500">
-                Profesor e Investigador Titular de la Universidad Michoacana de San Nicolás de Hidalgo.
-              </p>
             </div>
 
             {/* Quick footer socials */}

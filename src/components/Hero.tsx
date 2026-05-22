@@ -1,6 +1,7 @@
 import { motion } from 'motion/react';
 import { Award, BookOpen, GraduationCap, ArrowRight, Activity, Calendar } from 'lucide-react';
 import { personalInfo } from '../data';
+import escudoImg from '../escudo.svg';
 
 interface HeroProps {
   setActiveSection: (section: string) => void;
@@ -66,10 +67,15 @@ export default function Hero({ setActiveSection }: HeroProps) {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="inline-flex items-center space-x-2 bg-indigo-50/80 px-3.5 py-1.5 rounded-full border border-indigo-100"
+              className="inline-flex items-center space-x-2.5 bg-indigo-50/90 px-4 py-1.5 rounded-full border border-indigo-100/80 shadow-sm"
             >
-              <Activity className="h-4 w-4 text-indigo-600 animate-pulse" />
-              <span className="text-xs font-mono font-semibold tracking-wider text-indigo-900 uppercase">
+              <img 
+                src={escudoImg}
+                alt="Escudo UMSNH" 
+                className="h-5 w-auto select-none"
+                referrerPolicy="no-referrer"
+              />
+              <span className="text-xs font-mono font-bold tracking-wider text-indigo-950 uppercase">
                 Universidad Michoacana de San Nicolás de Hidalgo
               </span>
             </motion.div>
@@ -209,7 +215,7 @@ export default function Hero({ setActiveSection }: HeroProps) {
                   </div>
                   <div className="flex justify-between">
                     <span className="font-medium text-slate-400">Investigador</span>
-                    <span className="bg-indigo-50 text-indigo-900 px-1.5 py-0.5 rounded font-bold text-[10px]">Estatal ICTI</span>
+                    <span className="bg-indigo-50 text-indigo-900 px-1.5 py-0.5 rounded font-bold text-[10px]">Estatal ICTI / SECIHTI</span>
                   </div>
                 </div>
               </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mail, GraduationCap, Menu, X, Globe, ExternalLink } from 'lucide-react';
 import { personalInfo } from '../data';
+import escudoImg from '../escudo.svg';
 
 interface HeaderProps {
   activeSection: string;
@@ -56,6 +57,12 @@ export default function Header({ activeSection, setActiveSection }: HeaderProps)
         <div className="flex items-center justify-between">
           {/* Logo Brand */}
           <div className="flex items-center space-x-3 cursor-pointer" onClick={() => scrollToSection('sobre-mi')}>
+            <img 
+              src={escudoImg}
+              alt="Escudo UMSNH" 
+              className="h-10 w-auto filter drop-shadow-sm hover:scale-105 transition-transform duration-250 select-none"
+              referrerPolicy="no-referrer"
+            />
             <div>
               <span className="font-display font-semibold text-slate-900 text-sm tracking-wide block">
                 Dr. Erick Radaí Rojas

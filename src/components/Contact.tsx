@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mail, Phone, MapPin, Clock, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import { personalInfo } from '../data';
+import escudoImg from '../escudo.svg';
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -78,6 +79,19 @@ export default function Contact() {
           {/* Contact Details (Left Column) */}
           <div className="lg:col-span-5 space-y-8 flex flex-col justify-between">
             <div className="space-y-6">
+              <div className="flex items-center space-x-3.5 bg-slate-50/80 border border-slate-150 p-4 rounded-xl">
+                <img 
+                  src={escudoImg}
+                  alt="Escudo UMSNH" 
+                  className="h-12 w-auto filter drop-shadow-sm hover:scale-105 transition-transform duration-250 select-none"
+                  referrerPolicy="no-referrer"
+                />
+                <div>
+                  <h4 className="font-display font-semibold text-slate-800 text-xs">Universidad Michoacana de San Nicolás de Hidalgo</h4>
+                  <p className="font-mono text-[9.5px] text-indigo-600 mt-0.5 uppercase tracking-wider">Correspondencia de Investigación</p>
+                </div>
+              </div>
+
               <h3 className="font-display font-bold text-xl text-slate-800">
                 Oficinas y Asistencia
               </h3>
