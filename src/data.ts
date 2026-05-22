@@ -181,7 +181,7 @@ export const experience: ExperienceItem[] = [
     description: [
       'Miembro de comités editoriales y árbitro dictaminador en revistas científicas indexadas de alto impacto.',
       'Colaborador y revisor en el diseño técnico y metodológico de reactivos del certamen de ingreso EXAUM-I y EXAUM-II.',
-      'Asesor metodológico y jurado examinador oficial en la sustentación de exámenes de grado de nivel medio superior y superior.'
+      'Asesor metodológico y jurado examinador oficial en la sustentación de exámenes de grado de nivel superior.'
     ],
   },
   {
@@ -193,7 +193,6 @@ export const experience: ExperienceItem[] = [
     type: 'management',
     description: [
       'Dirección académica y actualización curricular sistemática de programas de ciencias exactas.',
-      'Coordinación de los planes para la Acreditación del Programa Institucional de Licenciatura en Biotecnología.',
       'Miembro activo de la Comisión de Reacreditación del PILB (24 de mayo de 2026).'
     ],
   },
@@ -207,7 +206,7 @@ export const experience: ExperienceItem[] = [
     description: [
       'Distinción y acreditación oficial honorífica por la trayectoria de aportación al desarrollo científico regional.',
       'Autor de más de 20 artículos indexados de alta calidad sobre didáctica matemática y aprendizaje de cálculo.',
-      'Evaluador y dictaminador habitual para revistas de excelencia académica y de divulgación.'
+      'Evaluador y dictaminador habitual para revistas de excelencia académica and de divulgación.'
     ],
   },
   {
@@ -219,8 +218,31 @@ export const experience: ExperienceItem[] = [
     type: 'management',
     description: [
       'Gestión académica a nivel medio superior orientada al funcionamiento y mejoramiento del núcleo académico y estudiantil.',
-      'Coordinador del programa de Acercamiento de Estudiantes del Bachillerato a la Investigación Científica (PIFIEMS 1.0, 2007).',
-      'Postulado por los Consejeros Técnicos Alumnos para la condecoración de Trayectoria Destacada en Bachillerato a la Presea Vasco de Quiroga.'
+      'Supervisión de planes formativos, controles de acreditación internos y vinculación directa de tutorías con alumnos.'
+    ],
+  },
+  {
+    id: 'exp_pifiems',
+    role: 'Coordinador de Programa de Bachillerato Científico (PIFIEMS 1.0)',
+    organization: 'Programa de Acercamiento de Estudiantes del Bachillerato a la Investigación Científica',
+    period: '2007',
+    location: 'Morelia, Michoacán, México',
+    type: 'management',
+    description: [
+      'Dirección de estrategias pedagógicas orientadas a despertar tempranamente la vocación científica y tecnológica en estudiantes de bachillerato.',
+      'Vinculación institucional de alumnos sobresalientes con grupos de investigadores y académicos nicolaitas.'
+    ],
+  },
+  {
+    id: 'exp_vasco',
+    role: 'Postulado a la Presea Vasco de Quiroga',
+    organization: 'Colegio Primitivo y Nacional de San Nicolás de Hidalgo - UMSNH',
+    period: '2012',
+    location: 'Morelia, Michoacán, México',
+    type: 'academic',
+    description: [
+      'Postulación honorífica propuesta directamente por los Consejeros Técnicos Alumnos del bachillerato en reconocimiento a la Trayectoria Destacada en Bachillerato.',
+      'Reconocimiento estudiantil en honor a la calidad moral, pedagogía de excelencia y compromiso de servicio hacia la comunidad escolar nicolaíta.'
     ],
   },
   {

@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Quote, FileText, ChevronDown, ChevronUp, Link, Filter, ClipboardCheck } from 'lucide-react';
+import { Quote, ChevronDown, ChevronUp, Link, ClipboardCheck } from 'lucide-react';
 import { publications } from '../data';
 import { Publication } from '../types';
 
 export default function Publications() {
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>('Todas');
   const [expandedPubId, setExpandedPubId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -15,12 +14,7 @@ export default function Publications() {
 
   // Filters logic
   const filteredPublications = publications.filter(pub => {
-    const matchesTag = selectedTag === 'Todas' || pub.tags.includes(selectedTag);
-    const matchesQuery = 
-      pub.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      pub.journal.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      pub.authors.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesTag && matchesQuery;
+    return selectedTag === 'Todas' || pub.tags.includes(selectedTag);
   });
 
   const toggleAbstract = (id: string) => {
@@ -46,7 +40,7 @@ export default function Publications() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Title */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
+        <div className="text-center max-w-3xl mx-auto mb-12">
           <span className="font-mono text-xs text-indigo-600 font-semibold uppercase tracking-widest block mb-2 font-display">
             Artículos y Conferencias
           </span>
@@ -54,56 +48,25 @@ export default function Publications() {
             Publicaciones Destacadas
           </h2>
           <p className="mt-4 text-slate-500 font-normal text-md">
-            Consulte la lista indizada de artículos científicos enfocados a la investigación educativa. Filtre por tema u obtenga citas en formato APA instantáneamente.
+            Consulte la lista indizada de artículos científicos enfocados a la investigación educativa. Obtenga citas en formato APA al instante.
           </p>
         </div>
 
-        {/* Filters and search controls block */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-md mb-10 max-w-5xl mx-auto space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-            
-            {/* Search inputs */}
-            <div className="relative md:col-span-7">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-slate-400" />
-              </span>
-              <input
-                type="text"
-                value={searchQuery}
-                placeholder="Buscar por título, coautor o revista..."
-                onChange={(e) => setSearchQuery(e.target.value)}
-                id="pub-search-input"
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:bg-white focus:outline-none rounded-xl text-slate-700 text-sm placeholder-slate-400 transition"
-              />
-            </div>
-
-            {/* Quick stats indicator */}
-            <div className="md:col-span-5 flex items-center justify-end font-mono text-xs text-slate-400 font-semibold space-x-3">
-              <span className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-lg text-slate-600">
-                <FileText className="h-3.5 w-3.5" /> Mostrados: {filteredPublications.length} de {publications.length}
-              </span>
-            </div>
-          </div>
-
-          {/* Tag categories filters */}
-          <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-5">
-            <span className="text-xs font-mono font-bold text-slate-400 mr-2 flex items-center gap-1">
-              <Filter className="h-3.5 w-3.5" /> Categorías:
-            </span>
-            {allTags.map(tag => (
-              <button
-                key={tag}
-                onClick={() => setSelectedTag(tag)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold font-display transition-all outline-none select-none duration-250 ${
-                  selectedTag === tag
-                    ? 'bg-indigo-900 text-white shadow-md shadow-indigo-900/10'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
+        {/* Tag categories filters */}
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-12 max-w-3xl mx-auto border-b border-slate-200 pb-6">
+          {allTags.map(tag => (
+            <button
+              key={tag}
+              onClick={() => setSelectedTag(tag)}
+              className={`px-4 py-2 rounded-full text-xs font-semibold font-display transition-all outline-none select-none duration-255 ${
+                selectedTag === tag
+                  ? 'bg-indigo-900 text-white shadow-md shadow-indigo-900/10'
+                  : 'bg-white border border-slate-250 text-slate-500 hover:bg-slate-105 hover:text-slate-900'
+              }`}
+            >
+              {tag}
+            </button>
+          ))}
         </div>
 
         {/* Publications feed lists */}
@@ -151,11 +114,6 @@ export default function Publications() {
                       </p>
                     </div>
 
-                    {/* Citations index tag */}
-                    <div className="h-10 w-10 flex flex-col justify-center items-center bg-indigo-50 border border-indigo-100 rounded-lg text-indigo-700 font-mono flex-shrink-0 select-none">
-                      <span className="font-bold text-xs">{pub.citations}</span>
-                      <span className="text-[8px] font-semibold text-indigo-400 uppercase leading-none -mt-0.5">citas</span>
-                    </div>
                   </div>
 
                   {/* Tag components */}
@@ -255,7 +213,7 @@ export default function Publications() {
                 <div className="max-w-xs mx-auto space-y-3">
                   <span className="text-4xl">🔬</span>
                   <h4 className="font-display font-semibold text-slate-800">No se encontraron artículos</h4>
-                  <p className="text-xs text-slate-400">Intente modificar los términos de búsqueda o cambiar el filtro de categorías.</p>
+                  <p className="text-xs text-slate-400">Intente modificar el filtro de categorías.</p>
                 </div>
               </motion.div>
             )}

@@ -27,16 +27,6 @@ export default function Courses() {
               className="bg-white rounded-2xl p-6 border border-slate-200/80 hover:border-indigo-150 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
             >
               <div className="space-y-4">
-                
-                {/* Level and Code row */}
-                <div className="flex justify-between items-center text-[10px] font-mono">
-                  <span className="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded font-bold">
-                    {course.code}
-                  </span>
-                  <span className="text-slate-400 font-bold uppercase">
-                    {course.level}
-                  </span>
-                </div>
 
                 <h3 className="font-display font-bold text-lg text-slate-900 group-hover:text-indigo-950 transition-colors">
                   {course.name}
