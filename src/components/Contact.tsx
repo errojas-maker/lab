@@ -107,10 +107,10 @@ export default function Contact() {
                     <Mail className="h-4.5 w-4.5" />
                   </div>
                   <div>
-                    <span className="block font-semibold text-slate-800 font-display">Correo Institucional</span>
-                    <a href={`mailto:${personalInfo.email}`} id="contact-email-link" className="block text-indigo-600 font-medium hover:underline mt-0.5">
-                      {personalInfo.email}
-                    </a>
+                    <span className="block font-semibold text-slate-800 font-display">Contacto Seguro</span>
+                    <span className="block text-slate-500 mt-0.5">
+                      Disponible a través del formulario de mensaje directo en esta sección.
+                    </span>
                   </div>
                 </div>
 
@@ -161,7 +161,7 @@ export default function Contact() {
                     <div>
                       <p className="font-bold">¡Mensaje enviado con éxito!</p>
                       <p className="text-[11px] text-emerald-700 mt-1">
-                        Su propuesta ha sido procesada de manera segura. El Dr. Erick recibirá esta información en su buzón de @umich.mx.
+                        Su propuesta ha sido procesada de manera segura. El Dr. Erick recibirá esta información en su buzón institucional de manera directa.
                       </p>
                     </div>
                   </motion.div>

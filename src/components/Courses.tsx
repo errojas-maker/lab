@@ -15,7 +15,7 @@ export default function Courses() {
             Cursos Docentes Universitarios
           </h2>
           <p className="mt-4 text-slate-500 font-normal text-md">
-            El Dr. Erick imparte materias fundamentales de física y matemática tanto en licenciatura de ingeniería como en el programa de maestría de la Universidad Michoacana.
+            El Dr. Erick Radaí imparte materias fundamentales de física y matemática tanto en licenciatura como en el bachillerato. En posgrado se enfoca en Didáctica de las matemáticas, Seminario de Investigación, entre otras.
           </p>
         </div>
 

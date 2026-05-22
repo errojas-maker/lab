@@ -1,4 +1,5 @@
 import { Publication, EducationItem, ExperienceItem, Course, ResearchLine } from './types';
+import avatarImg from './avatar.png';
 
 export const personalInfo = {
   name: 'Erick Radaí Rojas Maldonado',
@@ -7,12 +8,12 @@ export const personalInfo = {
   institution: 'Universidad Michoacana de San Nicolás de Hidalgo (UMSNH)',
   faculty: 'Invitado en el Programa Institucional de Licenciatura en Biotecnología',
   location: 'Morelia, Michoacán, México',
-  email: 'radai.rojas@umich.mx',
+  email: '',
   orcid: '0000-0003-2521-5107',
   scholar: 'https://scholar.google.com/citations?user=radai_rojas',
   researchGate: 'https://www.researchgate.net/profile/Erick_Radai_Maldonado2?ev=hdr_xprf',
   phone: '+52 (443) 322-3500 ext. 4102',
-  avatar: '/avatar.png',
+  avatar: avatarImg,
   bio: 'Profesor e Investigador Titular de la Universidad Michoacana de San Nicolás de Hidalgo (UMSNH), invitado en el Programa Institucional de Licenciatura en Biotecnología. Cuenta con más de 28 años de trayectoria docente, habiendo impartido más de 140 cursos a nivel medio superior, superior y posgrado. Es reconocido como Investigador Estatal Honorífico por el Instituto de Ciencia, Tecnología e Innovación (ICTI) del Gobierno del Estado de Michoacán de 2022 a la fecha.',
   objective: 'Desarrollar mi experiencia hacia la coordinación y organización de gestión académica mejorando los proyectos educativos institucionales y los procesos formativos que se vinculen con la sociedad y con los parámetros de la evaluación educativa internacional.',
   aptitudes: [
@@ -192,8 +193,7 @@ export const experience: ExperienceItem[] = [
     location: 'Morelia, Michoacán',
     type: 'management',
     description: [
-      'Dirección académica y actualización curricular sistemática de programas de ciencias exactas.',
-      'Miembro activo de la Comisión de Reacreditación del PILB (24 de mayo de 2026).'
+      'Dirección académica y actualización curricular sistemática de programas de ciencias exactas.'
     ],
   },
   {

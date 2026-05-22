@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { Briefcase, Laptop, Landmark, ChevronRight } from 'lucide-react';
+import { Briefcase, Laptop, Landmark, ChevronRight, Award, Trophy, Users } from 'lucide-react';
 import { experience } from '../data';
 
 export default function Experience() {
@@ -14,6 +14,11 @@ export default function Experience() {
         return <Laptop className="h-5 w-5 text-teal-600" />;
     }
   };
+
+  // Filter experiences
+  const timelineExp = experience.filter(exp => exp.id !== 'exp_pifiems' && exp.id !== 'exp_vasco');
+  const pifiemsExp = experience.find(exp => exp.id === 'exp_pifiems');
+  const vascoExp = experience.find(exp => exp.id === 'exp_vasco');
 
   return (
     <section id="trayectoria" className="py-24 bg-white border-b border-slate-100">
@@ -40,7 +45,7 @@ export default function Experience() {
             transition={{ duration: 0.4 }}
             className="space-y-12"
           >
-            {experience.map((exp) => (
+            {timelineExp.map((exp) => (
               <div key={exp.id} className="relative group">
                 
                 {/* Time indicator circle anchor */}
@@ -82,6 +87,90 @@ export default function Experience() {
               </div>
             ))}
           </motion.div>
+        </div>
+
+        {/* Coordinations and recognitions sections block */}
+        <div className="mt-24 pt-16 border-t border-slate-100 max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h3 className="font-display font-bold text-2xl text-slate-900 tracking-tight">
+              Secciones Especiales Reconocidas
+            </h3>
+            <p className="mt-2 text-sm text-slate-500">
+              Coordinaciones de programas científicos de bachillerato y postulaciones a alta condecoración universitaria.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* PIFIEMS block */}
+            {pifiemsExp && (
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="bg-slate-50 rounded-2xl p-6 border border-slate-200/60 shadow-sm hover:shadow-md transition-all relative overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 h-20 w-20 bg-indigo-50/70 rounded-bl-full flex items-center justify-center pl-4 pb-4 select-none">
+                  <Users className="h-5 w-5 text-indigo-450" />
+                </div>
+                
+                <span className="font-mono text-xs font-bold text-indigo-650 bg-indigo-50 px-2.5 py-1 rounded">
+                  {pifiemsExp.period}
+                </span>
+                
+                <h4 className="font-display font-bold text-lg text-slate-900 mt-4 leading-snug">
+                  {pifiemsExp.role}
+                </h4>
+                
+                <p className="font-display font-semibold text-xs text-slate-550 mt-1.5">
+                  {pifiemsExp.organization}
+                </p>
+
+                <ul className="mt-5 space-y-2.5 pt-4 border-t border-slate-200/50">
+                  {pifiemsExp.description.map((desc, dIdx) => (
+                    <li key={dIdx} className="text-xs text-slate-500 leading-relaxed flex items-start space-x-2">
+                      <ChevronRight className="h-3.5 w-3.5 text-indigo-505 mt-0.5 flex-shrink-0" />
+                      <span>{desc}</span>
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            )}
+
+            {/* Vasco de Quiroga block */}
+            {vascoExp && (
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="bg-slate-50 rounded-2xl p-6 border border-slate-200/60 shadow-sm hover:shadow-md transition-all relative overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 h-20 w-20 bg-amber-55/40 rounded-bl-full flex items-center justify-center pl-4 pb-4 select-none">
+                  <Trophy className="h-5 w-5 text-amber-600" />
+                </div>
+                
+                <span className="font-mono text-xs font-bold text-amber-655 bg-amber-50 px-2.5 py-1 rounded">
+                  {vascoExp.period}
+                </span>
+                
+                <h4 className="font-display font-bold text-lg text-slate-900 mt-4 leading-snug">
+                  {vascoExp.role}
+                </h4>
+                
+                <p className="font-display font-semibold text-xs text-slate-550 mt-1.5">
+                  {vascoExp.organization}
+                </p>
+
+                <ul className="mt-5 space-y-2.5 pt-4 border-t border-slate-200/50">
+                  {vascoExp.description.map((desc, dIdx) => (
+                    <li key={dIdx} className="text-xs text-slate-500 leading-relaxed flex items-start space-x-2">
+                      <ChevronRight className="h-3.5 w-3.5 text-amber-505 mt-0.5 flex-shrink-0" />
+                      <span>{desc}</span>
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            )}
+          </div>
         </div>
 
       </div>

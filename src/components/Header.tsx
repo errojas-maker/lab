@@ -101,14 +101,14 @@ export default function Header({ activeSection, setActiveSection }: HeaderProps)
 
           {/* Quick Contact Button */}
           <div className="hidden lg:flex items-center space-x-3">
-            <a
-              href={`mailto:${personalInfo.email}`}
+            <button
+              onClick={() => scrollToSection('contacto')}
               id="header-contact-btn"
-              className="flex items-center space-x-2 px-4 py-2 bg-indigo-900 text-white rounded-lg shadow-md shadow-indigo-900/10 hover:bg-slate-800 transition-all duration-200 text-sm font-medium"
+              className="flex items-center space-x-2 px-4 py-2 bg-indigo-900 text-white rounded-lg shadow-md shadow-indigo-900/10 hover:bg-slate-800 transition-all duration-200 text-sm font-medium cursor-pointer"
             >
               <Mail className="h-4 w-4" />
               <span>Contactar</span>
-            </a>
+            </button>
           </div>
 
           {/* Mobile menu button */}
@@ -149,13 +149,16 @@ export default function Header({ activeSection, setActiveSection }: HeaderProps)
                 </button>
               ))}
               <div className="pt-4 border-t border-slate-100 px-4">
-                <a
-                  href={`mailto:${personalInfo.email}`}
-                  className="flex items-center justify-center space-x-2 w-full py-3 bg-indigo-900 text-white rounded-lg shadow-md hover:bg-slate-800 transition duration-200"
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    scrollToSection('contacto');
+                  }}
+                  className="flex items-center justify-center space-x-2 w-full py-3 bg-indigo-900 text-white rounded-lg shadow-md hover:bg-slate-800 transition duration-200 cursor-pointer"
                 >
                   <Mail className="h-4 w-4" />
                   <span>Contactar Dr. Erick</span>
-                </a>
+                </button>
               </div>
             </div>
           </motion.div>

@@ -100,7 +100,7 @@ export default function App() {
               <a href={personalInfo.scholar} target="_blank" rel="noreferrer" className="hover:text-white transition flex items-center gap-1">
                 Scholar <ExternalLink className="h-3 w-3" />
               </a>
-              <a href={`mailto:${personalInfo.email}`} className="hover:text-white transition flex items-center gap-1">
+              <a href="#contacto" className="hover:text-white transition flex items-center gap-1">
                 Contacto <Mail className="h-3 w-3" />
               </a>
             </div>
