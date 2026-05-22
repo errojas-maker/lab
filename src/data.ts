@@ -118,6 +118,18 @@ export const publications: Publication[] = [
     abstract: 'Libro educativo enfocado a desmitificar los métodos de integración a través de analogías directas y un desglose intuitivo paso a paso, convirtiéndose en un manual de referencia didáctica para docentes de ingeniería.',
     tags: ['Libros', 'Integrales', 'Cálculo', 'Metáforas'],
     citations: 35,
+  },
+  {
+    id: 'pub_umbral',
+    title: 'Cálculo Diferencial',
+    authors: 'Baltazar Júnez Vega, Carlos Alberto Júnez Ferreyra, Erick Radaí Rojas Maldonado',
+    journal: 'Umbral Editorial S.A. de C.V.',
+    year: 2009,
+    volume: 'Primera Edición',
+    pages: 'ISBN 9789708230131',
+    abstract: 'Libro de texto diseñado bajo el enfoque pedagógico del constructivismo para la enseñanza-aprendizaje del Cálculo Diferencial, integrando problemas de aplicación real y recursos gráficos visuales dirigidos al nivel medio superior y superior, y apoyado activamente mediante el uso del software Mathematica de Wolfram Research con applets para su mejor comprensión.',
+    tags: ['Libros', 'Cálculo Diferencial', 'Cálculo', 'Didáctica', 'Mathematica'],
+    citations: 32,
   }
 ];
 
