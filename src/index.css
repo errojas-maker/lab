@@ -55,3 +55,32 @@ html {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* @media print styles to export professional laboratory report to PDF cleanly */
+@media print {
+  /* Hide the entire body content except the scientific report container */
+  body > :not(#scientific-print-report) {
+    display: none !important;
+  }
+  
+  #scientific-print-report {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    color: #1e293b !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* Force print background colors for styled borders/tables */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+

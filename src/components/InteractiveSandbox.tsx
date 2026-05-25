@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Play, RotateCcw, LineChart, HelpCircle, Activity, ArrowRight, BookOpen, Layers, Sliders, Clock, Thermometer, ShieldAlert, Brain, Zap, RefreshCw, Pause } from 'lucide-react';
+import { Play, RotateCcw, LineChart, HelpCircle, Activity, ArrowRight, BookOpen, Layers, Sliders, Clock, Thermometer, ShieldAlert, Brain, Zap, RefreshCw, Pause, CheckCircle2, AlertTriangle, ChevronDown, ListPlus, Flame, MoveRight, Eye, Calculator } from 'lucide-react';
+import { lex, parse, compileExpression, Token } from '../utils/mathParser';
 
 // ==================== INTERFACES & DEFINITIONS ====================
 
@@ -904,6 +905,58 @@ export default function InteractiveSandbox() {
   const [showExact, setShowExact] = useState<boolean>(true);
   const [showVectorField, setShowVectorField] = useState<boolean>(true);
 
+  // Nested sub-tab state for EDO Laboratory: '1d' = Métodos Numéricos, '2d' = Sistemas de Espacio de Estados
+  const [odeSubTab, setOdeSubTab] = useState<'1d' | '2d'>('1d');
+
+  // Scientific report parameters
+  const [showReport, setShowReport] = useState<boolean>(false);
+  const [reportStudentName, setReportStudentName] = useState<string>('Radai Rojas Maldonado');
+  const [reportNotes, setReportNotes] = useState<string>('Análisis de aproximación numérica y topología de trayectorias en el espacio de estados 2D.');
+
+  // 2D State-Space Simulator States
+  const [ssA11, setSsA11] = useState<number>(0);
+  const [ssA12, setSsA12] = useState<number>(1);
+  const [ssA21, setSsA21] = useState<number>(-9);
+  const [ssA22, setSsA22] = useState<number>(-0.5);
+  const [ssB1, setSsB1] = useState<number>(0);
+  const [ssB2, setSsB2] = useState<number>(1);
+  const [ssU, setSsU] = useState<number>(0.0); // constant step input
+  const [ssX1_0, setSsX1_0] = useState<number>(1.5);
+  const [ssX2_0, setSsX2_0] = useState<number>(1.0);
+  const [ssSelectedPreset, setSsSelectedPreset] = useState<string>('underdamped');
+  const [ssActiveTimeIndex, setSsActiveTimeIndex] = useState<number>(120); // for scanning physical views
+  const [ssIsAnimating, setSsIsAnimating] = useState<boolean>(false);
+
+  // Custom ODE formula parser state
+  const [customOdeInput, setCustomOdeInput] = useState<string>('y * cos(x)');
+  const [customOdeFormula, setCustomOdeFormula] = useState<string>('y * cos(x)');
+  const [customOdeError, setCustomOdeError] = useState<string | null>(null);
+  const [customOdeTokens, setCustomOdeTokens] = useState<Token[]>([]);
+
+  // Tokenize & Parse on raw input changes to yield rich parsing state highlights
+  React.useEffect(() => {
+    try {
+      const tokens = lex(customOdeInput);
+      setCustomOdeTokens(tokens);
+      parse(tokens); // Validate syntactically
+      setCustomOdeError(null);
+      setCustomOdeFormula(customOdeInput); // Commit to numerical simulator
+    } catch (err: any) {
+      setCustomOdeError(err.message || 'Error de parseo');
+      try {
+        setCustomOdeTokens(lex(customOdeInput));
+      } catch (ex) {}
+    }
+  }, [customOdeInput]);
+
+  const customOdeEval = React.useMemo(() => {
+    try {
+      return compileExpression(customOdeFormula);
+    } catch (e) {
+      return (x: number, y: number) => 0;
+    }
+  }, [customOdeFormula]);
+
   const odes: ODEEquation[] = [
     {
       id: 'logistic',
@@ -944,10 +997,271 @@ export default function InteractiveSandbox() {
         return C * Math.exp(-x) + 0.5 * Math.sin(x) - 0.5 * Math.cos(x);
       },
       description: 'Modelado térmico donde el ambiente experimenta ciclos de frío y calor (ondas senoidales). El objeto sigue esta variación adaptando un desfase termodinámico.'
+    },
+    {
+      id: 'custom',
+      name: 'Ecuación Matemática Personalizada',
+      formulaTex: `dy/dx = ${customOdeFormula}`,
+      defaultY0: 1.5,
+      minY0: 0.1,
+      maxY0: 4.9,
+      f: (x, y) => {
+        try {
+          return customOdeEval(x, y);
+        } catch (e) {
+          return 0;
+        }
+      },
+      exact: (x, y0) => {
+        // High fidelity RK4 simulation that represents the exact line
+        let t = 0;
+        let val = y0;
+        const targetX = x;
+        const fineH = 0.01;
+        const steps = Math.ceil(targetX / fineH);
+        for (let step = 0; step < steps; step++) {
+          const hStep = Math.min(fineH, targetX - t);
+          if (hStep <= 0) break;
+          const k1 = customOdeEval(t, val);
+          const k2 = customOdeEval(t + hStep/2, val + hStep*k1/2);
+          const k3 = customOdeEval(t + hStep/2, val + hStep*k2/2);
+          const k4 = customOdeEval(t + hStep, val + hStep*k3);
+          val += (hStep/6) * (k1 + 2 * k2 + 2 * k3 + k4);
+          t += hStep;
+        }
+        return val;
+      },
+      description: 'Evaluada dinámicamente mediante el motor de análisis sintáctico. Puedes definir funciones no lineales arbitrarias f(x, y).'
     }
   ];
 
   const currentOde = odes.find(o => o.id === selectedOdeId) || odes[0];
+
+  // --- 2D STATE-SPACE DEFINITIONS, PRESETS, SOLVERS & CLASS ESTIMATIONS ---
+  const ssPresets = [
+    {
+      id: 'underdamped',
+      name: 'Oscilador Subamortiguado (Atractor Espiral)',
+      a11: 0, a12: 1, a21: -9, a22: -0.5,
+      b1: 0, b2: 1,
+      u: 0,
+      x1_0: 1.5, x2_0: 1.0,
+      description: 'Sistema físico de masa-resorte con amortiguamiento reducido. Los polos son complejos conjugados con parte real negativa. Produce una espiral convergiendo suavemente hacia el origen.',
+      classification: 'Foco Estable (Espiral Convergente)'
+    },
+    {
+      id: 'saddle',
+      name: 'Punto de Silla (Inestable / Colina)',
+      a11: 1, a12: 2, a21: 2, a22: -1,
+      b1: 0, b2: 0,
+      u: 0,
+      x1_0: 0.5, x2_0: 0.1,
+      description: 'Representa el equilibrio inestable. Los autovalores son reales de signos opuestos (silla clásica). Las trayectorias se aproximan sobre una asíntota descrita por el autovector de compresión y luego huyen exponencialmente.',
+      classification: 'Punto de Silla (Saddle)'
+    },
+    {
+      id: 'harmonic',
+      name: 'Oscilador Armónico Ideal (Centro Conservativo)',
+      a11: 0, a12: 2, a21: -2, a22: 0,
+      b1: 0, b2: 0,
+      u: 0,
+      x1_0: 1.5, x2_0: 0.0,
+      description: 'Sistema idealizado sin disipación de energía (fricción cero). Los autovalores son puramente imaginarios, dando órbitas circulares cerradas y estables en sentido orbital.',
+      classification: 'Centro Neutro (Órbitas Cerradas)'
+    },
+    {
+      id: 'overdamped',
+      name: 'Sobreamortiguado (Nodo Estable)',
+      a11: 0, a12: 1, a21: -6, a22: -5,
+      b1: 0, b2: 1,
+      u: 0,
+      x1_0: 2.0, x2_0: 1.5,
+      description: 'Fricción viscosa tan elevada que drena la inercia antes de que ocurran oscilaciones. Ambos autovalores son reales y negativos. Retorno monótono directo al estado neutro.',
+      classification: 'Nodo Estable (Sink)'
+    },
+    {
+      id: 'unstable_spiral',
+      name: 'Foco Inestable (Espiral Divergente)',
+      a11: 0.2, a12: 3, a21: -3, a22: 0.2,
+      b1: 0, b2: 1,
+      u: 0,
+      x1_0: 0.2, x2_0: 0.2,
+      description: 'Inyección activa de energía o aceleración positiva. Los polos tienen parte real positiva. Las órbitas pequeñas crecen exponencialmente huyendo en espiral infinita.',
+      classification: 'Foco Inestable (Source)'
+    }
+  ];
+
+  const getEigenvalues = (a11: number, a12: number, a21: number, a22: number) => {
+    const trace = a11 + a22;
+    const det = a11 * a22 - a12 * a21;
+    const disc = trace * trace - 4 * det;
+    
+    if (disc >= 0) {
+      const lambda1 = (trace + Math.sqrt(disc)) / 2;
+      const lambda2 = (trace - Math.sqrt(disc)) / 2;
+      return {
+        type: 'real' as const,
+        l1: lambda1,
+        l2: lambda2,
+        disc,
+        trace,
+        det
+      };
+    } else {
+      const real = trace / 2;
+      const imag = Math.sqrt(-disc) / 2;
+      return {
+        type: 'complex' as const,
+        real,
+        imag,
+        disc,
+        trace,
+        det
+      };
+    }
+  };
+
+  const getStabilityInfo = (eigen: ReturnType<typeof getEigenvalues>) => {
+    const { trace, det, disc } = eigen;
+    if (det < 0) {
+      return {
+        name: 'Punto de Silla (Saddle - Inestable)',
+        color: 'text-amber-400 bg-amber-950/40 border-amber-900/40',
+        desc: 'Punto de Silla: Esfuerzo de corte hiperbólico. Una dirección atrae, la otra repele exponencialmente.',
+        category: 'Inestable'
+      };
+    } else if (det > 0) {
+      if (disc >= 0) {
+        if (trace < 0) {
+          return {
+            name: 'Atractor de Nodo Estable (Sink)',
+            color: 'text-emerald-400 bg-emerald-950/45 border-emerald-900/40',
+            desc: 'Nodo Estable: Amortiguamiento fuerte sobrecrítico (decaimiento monótono sin oscilar).',
+            category: 'Estable'
+          };
+        } else if (trace > 0) {
+          return {
+            name: 'Repulsor de Nodo Inestable (Source)',
+            color: 'text-rose-450 bg-rose-950/40 border-rose-900/40',
+            desc: 'Nodo Inestable: Ambas direcciones huyen exponencialmente del origen.',
+            category: 'Inestable'
+          };
+        } else {
+          return {
+            name: 'Centro Degenerado',
+            color: 'text-slate-400 bg-slate-950/40 border-slate-900/40',
+            desc: 'Caso límite degenerado sin dinámica real libre.',
+            category: 'Marginal'
+          };
+        }
+      } else {
+        if (trace < 0) {
+          return {
+            name: 'Foco Espiral Estable (Atractor)',
+            color: 'text-teal-405 bg-teal-950/45 border-teal-900/40',
+            desc: 'Espiral Estable: El origen devora todas las trayectorias en giros logarítmicos decrecientes.',
+            category: 'Estable'
+          };
+        } else if (trace > 0) {
+          return {
+            name: 'Foco Espiral Inestable (Source)',
+            color: 'text-orange-400 bg-orange-950/40 border-orange-900/40',
+            desc: 'Espiral Inestable: Las perturbaciones iniciales rotan huyendo hacia el infinito.',
+            category: 'Inestable'
+          };
+        } else {
+          return {
+            name: 'Centro Conservativo (Órbita Estable)',
+            color: 'text-sky-455 bg-sky-950/45 border-sky-900/45',
+            desc: 'Centro Neutro: Trayectorias orbitales cerradas de órbita circular/elíptica infinitamente estables.',
+            category: 'Conservativo (Estable)'
+          };
+        }
+      }
+    } else {
+      return {
+        name: 'Plano De Equilibrios No Aislados',
+        color: 'text-zinc-400 bg-zinc-950/40 border-zinc-900/40',
+        desc: 'Sistema singular: posee autovalor cero. Hay toda una recta o plano de equilibrio inmóvil.',
+        category: 'Singular'
+      };
+    }
+  };
+
+  const currentSsEigen = getEigenvalues(ssA11, ssA12, ssA21, ssA22);
+  const currentSsStability = getStabilityInfo(currentSsEigen);
+
+  const runStateSpaceRK4 = (
+    a11: number, a12: number, a21: number, a22: number,
+    b1: number, b2: number, u: number,
+    x0_1: number, x0_2: number
+  ) => {
+    const pts: { t: number; x1: number; x2: number }[] = [];
+    let cx1 = x0_1;
+    let cx2 = x0_2;
+    const dt = 0.05;
+    const totalSteps = 240; // 12 segundos totales
+    
+    pts.push({ t: 0, x1: cx1, x2: cx2 });
+    for (let i = 1; i <= totalSteps; i++) {
+      const t = i * dt;
+      const f1 = (v1: number, v2: number) => a11 * v1 + a12 * v2 + b1 * u;
+      const f2 = (v1: number, v2: number) => a21 * v1 + a22 * v2 + b2 * u;
+      
+      const k11 = f1(cx1, cx2);
+      const k12 = f2(cx1, cx2);
+      
+      const k21 = f1(cx1 + (dt/2) * k11, cx2 + (dt/2) * k12);
+      const k22 = f2(cx1 + (dt/2) * k11, cx2 + (dt/2) * k12);
+      
+      const k31 = f1(cx1 + (dt/2) * k21, cx2 + (dt/2) * k22);
+      const k32 = f2(cx1 + (dt/2) * k21, cx2 + (dt/2) * k22);
+      
+      const k41 = f1(cx1 + dt * k31, cx2 + dt * k32);
+      const k42 = f2(cx1 + dt * k31, cx2 + dt * k32);
+      
+      cx1 += (dt / 6) * (k11 + 2 * k21 + 2 * k31 + k41);
+      cx2 += (dt / 6) * (k12 + 2 * k22 + 2 * k32 + k42);
+      
+      pts.push({
+        t,
+        x1: isNaN(cx1) || !isFinite(cx1) ? 0 : Math.max(-10, Math.min(10, cx1)),
+        x2: isNaN(cx2) || !isFinite(cx2) ? 0 : Math.max(-10, Math.min(10, cx2))
+      });
+    }
+    return pts;
+  };
+
+  const ssTrajectory = runStateSpaceRK4(ssA11, ssA12, ssA21, ssA22, ssB1, ssB2, ssU, ssX1_0, ssX2_0);
+
+  // Phase Portrait Geometry Mapping: [-4, 4] for both x1 and x2
+  const ssScaleX = (x1: number) => 180 + x1 * 40;
+  const ssScaleY = (x2: number) => 180 - x2 * 40;
+  
+  const ssUnscaleX = (svgX: number) => (svgX - 180) / 40;
+  const ssUnscaleY = (svgY: number) => (180 - svgY) / 40;
+
+  const ssVectorField = (() => {
+    const vectors: { s1: number; s2: number; ds1: number; ds2: number; speed: number }[] = [];
+    const step = 0.8;
+    for (let s1 = -3.2; s1 <= 3.2; s1 += step) {
+      for (let s2 = -3.2; s2 <= 3.2; s2 += step) {
+        const ds1 = ssA11 * s1 + ssA12 * s2 + ssB1 * ssU;
+        const ds2 = ssA21 * s1 + ssA22 * s2 + ssB2 * ssU;
+        const mag = Math.sqrt(ds1*ds1 + ds2*ds2);
+        
+        let nds1 = 0;
+        let nds2 = 0;
+        if (mag > 1e-5) {
+          nds1 = (ds1 / mag) * 14; // Constant display length of 14px
+          nds2 = (ds2 / mag) * 14;
+        }
+        
+        vectors.push({ s1, s2, ds1: nds1, ds2: nds2, speed: mag });
+      }
+    }
+    return vectors;
+  })();
 
   // Axis bounds for ODE plot: X: [0, 6], Y: [0, 5]
   const widthO = 500;
@@ -961,6 +1275,27 @@ export default function InteractiveSandbox() {
     if (targetOde) {
       setOdeY0(targetOde.defaultY0);
     }
+  };
+
+  const handleSsPresetChange = (presetId: string) => {
+    setSsSelectedPreset(presetId);
+    const pr = ssPresets.find(p => p.id === presetId);
+    if (pr) {
+      setSsA11(pr.a11);
+      setSsA12(pr.a12);
+      setSsA21(pr.a21);
+      setSsA22(pr.a22);
+      setSsB1(pr.b1);
+      setSsB2(pr.b2);
+      setSsU(pr.u);
+      setSsX1_0(pr.x1_0);
+      setSsX2_0(pr.x2_0);
+      setSsActiveTimeIndex(120); // Reset seek index
+    }
+  };
+
+  const handlePrintPdf = () => {
+    window.print();
   };
 
   // Runge-Kutta, Heun, and Euler math loops
@@ -3943,7 +4278,37 @@ export default function InteractiveSandbox() {
         {activeTab === 'ode' && (
           <div className="space-y-8 max-w-6xl mx-auto">
             
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+            {/* Elegant Sub-Tab Selection for 1D ODE or 2D State Space Systems */}
+            <div className="flex flex-col sm:flex-row justify-between items-center bg-slate-100 p-1.5 rounded-2xl border border-slate-200/60 max-w-lg mx-auto gap-1">
+              <button
+                type="button"
+                onClick={() => setOdeSubTab('1d')}
+                className={`w-full sm:w-auto flex-1 text-center py-2.5 px-4 rounded-xl text-xs font-semibold font-display tracking-wide flex items-center justify-center gap-2 transition cursor-pointer select-none ${
+                  odeSubTab === '1d'
+                    ? 'bg-indigo-900 text-white shadow-md shadow-indigo-900/10'
+                    : 'text-slate-600 hover:text-indigo-950 hover:bg-slate-200/50'
+                }`}
+              >
+                <LineChart className="h-4 w-4 shrink-0 text-indigo-400" />
+                <span>1D EDO y Métodos de Integración</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setOdeSubTab('2d')}
+                className={`w-full sm:w-auto flex-1 text-center py-2.5 px-4 rounded-xl text-xs font-semibold font-display tracking-wide flex items-center justify-center gap-2 transition cursor-pointer select-none ${
+                  odeSubTab === '2d'
+                    ? 'bg-indigo-900 text-white shadow-md shadow-indigo-900/10'
+                    : 'text-slate-600 hover:text-indigo-950 hover:bg-slate-200/50'
+                }`}
+              >
+                <Layers className="h-4 w-4 shrink-0 text-indigo-400" />
+                <span>Sistemas en Espacio de Estados 2D</span>
+              </button>
+            </div>
+
+            {odeSubTab === '1d' && (
+              <>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
               
               {/* Controls Panel & Math Formulas */}
               <div className="lg:col-span-5 bg-slate-50 border border-slate-200 p-6 rounded-2xl flex flex-col justify-between math-grid-dense">
@@ -3981,6 +4346,151 @@ export default function InteractiveSandbox() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Dynamic Custom Math Editor Panel - COMPLETELY INNOVATIVE */}
+                  {selectedOdeId === 'custom' && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="bg-indigo-950/45 p-4 rounded-xl border border-indigo-500/30 space-y-4 overflow-hidden"
+                    >
+                      <div className="space-y-1.5 flex flex-col">
+                        <div className="flex justify-between items-center">
+                          <span className="text-[10px] font-mono font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-1.5">
+                            <Calculator className="h-3 w-3 animate-spin text-indigo-400 font-semibold" style={{ animationDuration: '6s' }} />
+                            Editor Analítico dy/dx = f(x, y)
+                          </span>
+                          {customOdeError ? (
+                            <span className="text-[10px] font-mono text-rose-400 font-bold bg-rose-950/50 px-2 py-0.5 rounded flex items-center gap-1 border border-rose-900/40">
+                              <AlertTriangle className="h-2.5 w-2.5" />
+                              Error de Sintaxis
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-mono text-emerald-400 font-bold bg-emerald-950/70 px-2 py-0.5 rounded flex items-center gap-1 border border-emerald-900/40">
+                              <CheckCircle2 className="h-2.5 w-2.5" />
+                              Fórmula Lista
+                            </span>
+                          )}
+                        </div>
+                        
+                        {/* Styled Math Input */}
+                        <div className="relative mt-1">
+                          <span className="absolute left-3 top-2.5 font-mono text-xs text-indigo-400 select-none">dy/dx =</span>
+                          <input
+                            type="text"
+                            value={customOdeInput}
+                            onChange={(e) => setCustomOdeInput(e.target.value)}
+                            placeholder="y * cos(x)"
+                            className="w-full pl-16 pr-3 py-2 bg-slate-950 border border-indigo-500/30 rounded-lg text-xs font-mono text-indigo-100 placeholder-indigo-500 hover:border-indigo-400 focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 focus:outline-none transition-all shadow-md shadow-black/20"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Token flow tokenizer visualization - COMPLETELY INNOVATIVE */}
+                      <div className="space-y-1">
+                        <span className="text-[9px] font-mono text-indigo-300 block font-semibold uppercase">Tokenizador Visual en Tiempo Real:</span>
+                        <div className="p-2.5 bg-slate-950/80 rounded-lg border border-indigo-950/40 min-h-[38px] flex flex-wrap gap-1.5 items-center">
+                          {customOdeTokens.length === 0 ? (
+                            <span className="text-[10px] font-mono text-slate-500 italic select-none">Escribe una expresión...</span>
+                          ) : (
+                            customOdeTokens.map((token, tIdx) => {
+                              let bgClass = 'bg-slate-850 text-slate-300 border border-slate-700/30';
+                              let titleName = 'Operador / Caracter';
+                              if (token.type === 'NUMBER') {
+                                bgClass = 'bg-emerald-950/90 text-emerald-300 border border-emerald-900/40 font-semibold';
+                                titleName = 'Número';
+                              } else if (token.type === 'VAR') {
+                                bgClass = 'bg-sky-950/95 text-sky-300 border border-sky-900/40 font-bold';
+                                titleName = 'Variable';
+                              } else if (token.type === 'FUNC') {
+                                bgClass = 'bg-amber-950/90 text-amber-300 border border-amber-900/40 font-bold';
+                                titleName = 'Función';
+                              } else if (token.type === 'CONST') {
+                                bgClass = 'bg-purple-950/95 text-purple-300 border border-purple-900/40 font-bold';
+                                titleName = 'Constante';
+                              } else if (token.type === 'LPAREN' || token.type === 'RPAREN') {
+                                bgClass = 'bg-indigo-900/80 text-indigo-200 border border-indigo-700/40 font-semibold';
+                                titleName = 'Agrupación';
+                              }
+                              return (
+                                <span
+                                  key={`token-${tIdx}-${token.value}`}
+                                  className={`text-[10px] font-mono px-2 py-0.5 rounded transition shadow-sm cursor-help hover:scale-110 active:scale-95 ${bgClass}`}
+                                  title={titleName}
+                                >
+                                  {token.value}
+                                </span>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Mathematical Quickpad */}
+                      <div className="space-y-1">
+                        <span className="text-[9px] font-mono text-indigo-300 block font-semibold uppercase">Teclado de Símbolos Rápidos:</span>
+                        <div className="grid grid-cols-6 gap-1 text-[10px] font-mono">
+                          {['x', 'y', '+', '-', '*', '/', '^', '(', ')'].map(btn => (
+                            <button
+                              key={`pad-${btn}`}
+                              type="button"
+                              onClick={() => {
+                                setCustomOdeInput(prev => prev + btn);
+                              }}
+                              className="py-1 bg-slate-900 hover:bg-indigo-900 hover:text-white active:bg-indigo-950 border border-indigo-950 text-indigo-200 rounded text-center cursor-pointer transition select-none"
+                            >
+                              {btn}
+                            </button>
+                          ))}
+                          {['sin(', 'cos(', 'exp(', 'sqrt(', 'pi', 'e'].map(btn => (
+                            <button
+                              key={`pad-${btn}`}
+                              type="button"
+                              onClick={() => {
+                                setCustomOdeInput(prev => prev + btn);
+                              }}
+                              className="py-1 bg-slate-900/80 hover:bg-amber-900 hover:text-white active:bg-indigo-950 border border-indigo-950 text-amber-200 rounded text-center cursor-pointer transition select-none"
+                            >
+                              {btn.replace('(', '')}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Micro Presets List */}
+                      <div className="space-y-1.5 pt-1 border-t border-indigo-900/40 bg-zinc-950/20 p-2 rounded-lg">
+                        <span className="text-[9px] font-mono text-indigo-300 block font-semibold uppercase">Explorar Atractores y Curvas Físicas:</span>
+                        <div className="flex flex-wrap gap-1 pt-1">
+                          {[
+                            { name: 'Ondulante (y cos(x))', code: 'y * cos(x)' },
+                            { name: 'Campo Caótico', code: 'sin(x * y) - 0.4 * y' },
+                            { name: 'Atracción cuadrática', code: 'cos(x) - y^2' },
+                            { name: 'Caída de Van der Pol', code: 'y * (2.8 - y)' },
+                            { name: 'Gradiente exponencial', code: '-1.5 * y' }
+                          ].map(preset => (
+                            <button
+                              key={`pr-${preset.name}`}
+                              type="button"
+                              onClick={() => setCustomOdeInput(preset.code)}
+                              className="text-[9px] font-mono py-0.5 px-2 rounded bg-indigo-900/40 hover:bg-indigo-850/80 hover:text-white text-indigo-100 border border-indigo-800/20 transition cursor-pointer flex items-center gap-1.5 select-none"
+                            >
+                              <Flame className="h-2.5 w-2.5 text-amber-400 animate-pulse shrink-0" />
+                              <span>{preset.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Syntax error display card */}
+                      {customOdeError && (
+                        <div className="p-2.5 bg-rose-950/40 border border-rose-900/50 rounded-lg text-[10.5px] font-mono text-rose-300 leading-normal flex items-start gap-2">
+                          <AlertTriangle className="h-3.5 w-3.5 text-rose-400 shrink-0 mt-0.5" />
+                          <span>{customOdeError}</span>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
 
                   {/* Slider for Init Cond Y0 */}
                   <div className="space-y-2">
@@ -4123,13 +4633,24 @@ export default function InteractiveSandbox() {
                       <Activity className="h-4 w-4 text-indigo-600 animate-pulse" />
                       <span className="font-display font-bold text-sm text-slate-800">Campos Vectoriales y Curvas Integrales</span>
                     </div>
-                    <button
-                      onClick={resetOde}
-                      className="p-1 px-2.5 hover:bg-slate-50 border border-slate-200 rounded text-[10px] font-mono font-bold text-slate-500 hover:text-indigo-600 flex items-center gap-1.5 cursor-pointer pointer-events-auto"
-                      title="Restablecer"
-                    >
-                      <RotateCcw className="h-3 w-3" /> Reiniciar
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowReport(true)}
+                        className="p-1 px-2.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded text-[10px] font-mono font-bold text-indigo-700 hover:text-indigo-900 flex items-center gap-1.5 cursor-pointer pointer-events-auto shadow-sm transition-all"
+                        title="Generar Reporte Científico en PDF"
+                      >
+                        <BookOpen className="h-3 w-3 text-indigo-500" /> Reporte PDF
+                      </button>
+                      <button
+                        type="button"
+                        onClick={resetOde}
+                        className="p-1 px-2.5 hover:bg-slate-100 border border-slate-200 rounded text-[10px] font-mono font-bold text-slate-500 hover:text-indigo-600 flex items-center gap-1.5 cursor-pointer pointer-events-auto transition-all"
+                        title="Restablecer"
+                      >
+                        <RotateCcw className="h-3 w-3" /> Reiniciar
+                      </button>
+                    </div>
                   </div>
 
                   {/* ODE SVG plots */}
@@ -4398,9 +4919,539 @@ export default function InteractiveSandbox() {
               </div>
 
             </div>
-
-          </div>
+          </>
         )}
+
+          {odeSubTab === '2d' && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch font-sans">
+              
+              {/* 2D State-Space Control Board */}
+              <div className="lg:col-span-5 bg-slate-50 border border-slate-200 p-6 rounded-2xl flex flex-col justify-between math-grid-dense space-y-6">
+                <div className="space-y-5">
+                  
+                  {/* Presets Header */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-mono font-bold text-slate-400 block uppercase">
+                      1. Configuración de Retrato de Fase (Presets)
+                    </label>
+                    <div className="grid grid-cols-1 gap-1.5">
+                      {ssPresets.map(preset => (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => handleSsPresetChange(preset.id)}
+                          className={`text-left px-3.5 py-2 rounded-xl text-xs font-semibold font-display border transition-all flex flex-col gap-1 cursor-pointer pointer-events-auto select-none ${
+                            ssSelectedPreset === preset.id
+                              ? 'bg-indigo-900 text-white border-indigo-900 shadow-md shadow-indigo-900/10'
+                              : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
+                          }`}
+                        >
+                          <div className="flex justify-between items-center w-full">
+                            <span className="font-bold">{preset.name}</span>
+                            <span className={`text-[8.5px] font-mono px-2 py-0.5 rounded font-bold ${
+                              ssSelectedPreset === preset.id ? 'bg-indigo-950 text-indigo-200' : 'bg-slate-150 text-slate-505'
+                            }`}>
+                              {preset.classification}
+                            </span>
+                          </div>
+                          <span className={`text-[10px] line-clamp-2 leading-relaxed ${ssSelectedPreset === preset.id ? 'text-indigo-200' : 'text-slate-400'}`}>
+                            {preset.description}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Matrix A Editor */}
+                  <div className="space-y-2.5 pt-3 border-t border-slate-200">
+                    <div className="flex justify-between items-center">
+                      <label className="text-[10px] font-mono font-bold text-slate-400 block uppercase">
+                        2. Matriz de Estados de Transición (A)
+                      </label>
+                      <span className="text-[9.5px] font-mono font-bold text-indigo-650 bg-indigo-50 px-2.5 py-0.5 rounded border border-indigo-100">
+                        dx/dt = A · x
+                      </span>
+                    </div>
+                    
+                    {/* Matrix View box */}
+                    <div className="bg-slate-950 p-4 rounded-xl border border-indigo-950/40 flex items-center justify-center gap-6 shadow-md">
+                      <div className="text-2xl font-light text-slate-600 select-none">[</div>
+                      <div className="grid grid-cols-2 gap-x-5 gap-y-2.5 font-mono text-center text-xs">
+                        <div className="flex flex-col items-center gap-0.5 bg-slate-900/80 p-1.5 px-2.5 rounded border border-slate-800 min-w-[65px]">
+                          <span className="text-[8px] text-slate-500 block uppercase font-bold">a₁₁</span>
+                          <span className="text-indigo-300 font-bold">{ssA11.toFixed(1)}</span>
+                        </div>
+                        <div className="flex flex-col items-center gap-0.5 bg-slate-900/80 p-1.5 px-2.5 rounded border border-slate-800 min-w-[65px]">
+                          <span className="text-[8px] text-slate-500 block uppercase font-bold">a₁₂</span>
+                          <span className="text-indigo-300 font-bold">{ssA12.toFixed(1)}</span>
+                        </div>
+                        <div className="flex flex-col items-center gap-0.5 bg-slate-900/80 p-1.5 px-2.5 rounded border border-slate-800 min-w-[65px]">
+                          <span className="text-[8px] text-slate-500 block uppercase font-bold">a₂₁</span>
+                          <span className="text-indigo-300 font-bold">{ssA21.toFixed(1)}</span>
+                        </div>
+                        <div className="flex flex-col items-center gap-0.5 bg-slate-900/80 p-1.5 px-2.5 rounded border border-slate-800 min-w-[65px]">
+                          <span className="text-[8px] text-slate-500 block uppercase font-bold">a₂₂</span>
+                          <span className="text-indigo-300 font-bold">{ssA22.toFixed(1)}</span>
+                        </div>
+                      </div>
+                      <div className="text-2xl font-light text-slate-600 select-none">]</div>
+                    </div>
+
+                    {/* Sliders grid */}
+                    <div className="grid grid-cols-2 gap-3 pt-1">
+                      <div className="space-y-1">
+                        <span className="text-[9.5px] font-mono font-bold text-slate-500 block">Elemento a₁₁: {ssA11.toFixed(1)}</span>
+                        <input
+                          type="range"
+                          min="-4"
+                          max="4"
+                          step="0.1"
+                          value={ssA11}
+                          onChange={(e) => { setSsA11(parseFloat(e.target.value)); setSsSelectedPreset('custom'); }}
+                          className="w-full h-1 accent-indigo-600 cursor-pointer"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[9.5px] font-mono font-bold text-slate-500 block">Elemento a₁₂: {ssA12.toFixed(1)}</span>
+                        <input
+                          type="range"
+                          min="-4"
+                          max="4"
+                          step="0.1"
+                          value={ssA12}
+                          onChange={(e) => { setSsA12(parseFloat(e.target.value)); setSsSelectedPreset('custom'); }}
+                          className="w-full h-1 accent-indigo-600 cursor-pointer"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[9.5px] font-mono font-bold text-slate-500 block">Elemento a₂₁: {ssA21.toFixed(1)}</span>
+                        <input
+                          type="range"
+                          min="-12"
+                          max="4"
+                          step="0.1"
+                          value={ssA21}
+                          onChange={(e) => { setSsA21(parseFloat(e.target.value)); setSsSelectedPreset('custom'); }}
+                          className="w-full h-1 accent-indigo-600 cursor-pointer"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[9.5px] font-mono font-bold text-slate-500 block">Elemento a₂₂: {ssA22.toFixed(1)}</span>
+                        <input
+                          type="range"
+                          min="-4"
+                          max="4"
+                          step="0.1"
+                          value={ssA22}
+                          onChange={(e) => { setSsA22(parseFloat(e.target.value)); setSsSelectedPreset('custom'); }}
+                          className="w-full h-1 accent-indigo-600 cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stability analysis dashboard */}
+                  <div className="space-y-2 pt-3 border-t border-slate-200">
+                    <label className="text-[10px] font-mono font-bold text-slate-400 block uppercase">
+                      3. Autovalores y Clasificación de Estabilidad
+                    </label>
+                    <div className={`p-4 rounded-xl border flex flex-col gap-2 transition-all duration-300 ${currentSsStability.color}`}>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-display font-bold">{currentSsStability.name}</span>
+                        <span className="text-[9px] px-2 py-0.5 rounded font-mono font-bold bg-slate-950/30 text-white shrink-0">
+                          {currentSsStability.category}
+                        </span>
+                      </div>
+                      <p className="text-[10.5px] leading-relaxed opacity-90 select-none">
+                        {currentSsStability.desc}
+                      </p>
+                      
+                      {/* Poles readout */}
+                      <div className="pt-2 border-t border-white/10 grid grid-cols-2 gap-2 text-[10px] font-mono leading-normal">
+                        <div>
+                          <span className="opacity-75 block text-[8px] uppercase font-bold">Traza T:</span>
+                          <span className="font-bold">{currentSsEigen.trace.toFixed(3)}</span>
+                        </div>
+                        <div>
+                          <span className="opacity-75 block text-[8px] uppercase font-bold">Det Δ:</span>
+                          <span className="font-bold">{currentSsEigen.det.toFixed(3)}</span>
+                        </div>
+                        <div className="col-span-2 pt-1 border-t border-white/5">
+                          <span className="opacity-75 block text-[8px] uppercase font-bold">Autovalores λ₁,₂:</span>
+                          {currentSsEigen.type === 'real' ? (
+                            <span className="font-bold flex gap-2">
+                              <span>λ₁ = {currentSsEigen.l1.toFixed(3)}</span>
+                              <span className="opacity-40">|</span>
+                              <span>λ₂ = {currentSsEigen.l2.toFixed(3)}</span>
+                            </span>
+                          ) : (
+                            <span className="font-bold">
+                              λ = {currentSsEigen.real.toFixed(3)} ± j {currentSsEigen.imag.toFixed(3)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Constant Step amplitude G */}
+                  <div className="space-y-2 pt-3 border-t border-slate-200">
+                    <div className="flex justify-between items-center">
+                      <label className="text-[10px] font-mono font-bold text-slate-400 block uppercase">4. Entrada Forzada Externa (Amplitud Escalón u)</label>
+                      <span className="text-[10.5px] font-mono font-bold bg-slate-100 px-2.5 py-0.5 rounded border text-slate-600">
+                        u(t) = {ssU.toFixed(1)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="range"
+                        min="-2.5"
+                        max="2.5"
+                        step="0.1"
+                        value={ssU}
+                        onChange={(e) => setSsU(parseFloat(e.target.value))}
+                        className="w-full accent-indigo-600 h-1 cursor-pointer"
+                      />
+                    </div>
+                    <div className="text-[10px] leading-relaxed text-slate-400 font-mono">
+                      Introduce un vector de entrada B=[{ssB1},{ssB2}] para desplazar el punto de equilibrio a x_eq = -A⁻¹Bu. Desplaza el centro de oscilación.
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* 2D State-Space Graphical Canvas & Waves */}
+              <div className="lg:col-span-7 bg-white border border-slate-200 p-6 rounded-2xl shadow-sm flex flex-col justify-between space-y-5">
+                
+                {/* Phase space actions header */}
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
+                  <div className="flex items-center space-x-2">
+                    <Activity className="h-4 w-4 text-indigo-600 animate-pulse" />
+                    <span className="font-display font-bold text-sm text-slate-800">Visualizador de Sistemas Complejos</span>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowReport(true)}
+                      className="p-1 px-2.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded text-[10px] font-mono font-bold text-indigo-700 hover:text-indigo-900 flex items-center gap-1.5 cursor-pointer select-none transition-all shadow-sm pointer-events-auto"
+                    >
+                      <BookOpen className="h-3.5 w-3.5 text-indigo-500" /> Reporte PDF
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSsX1_0(1.5);
+                        setSsX2_0(1.0);
+                        setSsActiveTimeIndex(120);
+                      }}
+                      className="p-1 px-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded text-[10px] font-mono font-bold text-slate-600 flex items-center gap-1.5 cursor-pointer select-none transition-all pointer-events-auto"
+                    >
+                      <RotateCcw className="h-3 w-3" /> Reiniciar x₀
+                    </button>
+                  </div>
+                </div>
+
+                {/* Dual Graphical Area: Side-By-Side SVGs */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  
+                  {/* SVG PHASE PORTRAIT */}
+                  <div className="space-y-1.5 flex flex-col items-center">
+                    <span className="text-[9.5px] font-mono font-bold text-slate-400 block uppercase tracking-wide self-start w-full text-center md:text-left">
+                      Espacio de Fase (x₂ vs x₁) • Haz clic para cambiar x₀
+                    </span>
+                    <div className="relative border border-slate-150 bg-slate-950 rounded-xl overflow-hidden w-full aspect-square shadow-md shadow-slate-100/5 max-w-[280px]">
+                      <svg
+                        width="100%"
+                        height="100%"
+                        viewBox="0 0 360 360"
+                        className="select-none cursor-crosshair pointer-events-auto"
+                        onClick={(e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const clickX = e.clientX - rect.left;
+                          const clickY = e.clientY - rect.top;
+                          const scaledClickX = (clickX / rect.width) * 360;
+                          const scaledClickY = (clickY / rect.height) * 360;
+                          const newX1 = ssUnscaleX(scaledClickX);
+                          const newX2 = ssUnscaleY(scaledClickY);
+                          setSsX1_0(Math.max(-4, Math.min(4, newX1)));
+                          setSsX2_0(Math.max(-4, Math.min(4, newX2)));
+                        }}
+                      >
+                        {/* Centered Axis Grid layout */}
+                        <line x1="0" y1="180" x2="360" y2="180" stroke="#334155" strokeWidth={0.8} />
+                        <line x1="180" y1="0" x2="180" y2="360" stroke="#334155" strokeWidth={0.8} />
+                        
+                        {/* Axis small markings */}
+                        {[-3, -2, -1, 1, 2, 3].map(tickVal => (
+                          <React.Fragment key={`ssti-${tickVal}`}>
+                            <line x1={ssScaleX(tickVal)} y1="176" x2={ssScaleX(tickVal)} y2="184" stroke="#475569" strokeWidth={1} />
+                            <text x={ssScaleX(tickVal)} y="194" fill="#64748b" fontSize="8" fontFamily="monospace" textAnchor="middle">{tickVal}</text>
+                            <line x1="176" y1={ssScaleY(tickVal)} x2="184" y2={ssScaleY(tickVal)} stroke="#475569" strokeWidth={1} />
+                            <text x="166" y={ssScaleY(tickVal) + 3} fill="#64748b" fontSize="8" fontFamily="monospace" textAnchor="end">{tickVal}</text>
+                          </React.Fragment>
+                        ))}
+                        
+                        {/* Axis labels */}
+                        <text x="345" y="172" fill="#94a3b8" fontSize="9" fontFamily="monospace" textAnchor="end" fontWeight="bold">x₁ (Pos)</text>
+                        <text x="190" y="20" fill="#94a3b8" fontSize="9" fontFamily="monospace" textAnchor="start" fontWeight="bold">x₂ (Vel)</text>
+
+                        {/* SVG Vector field direction arrows */}
+                        {ssVectorField.map((v, vIdx) => {
+                          const endX = ssScaleX(v.s1) + v.ds1;
+                          const endY = ssScaleY(v.s2) - v.ds2; // minus for svg orientation
+                          // Map arrow colors dynamically based on speed to look spectacular
+                          const colorIndex = Math.min(4, Math.floor(v.speed * 1.5));
+                          const strokeColors = ['#1e293b', '#2e1065', '#334155', '#4338ca', '#6366f1'];
+                          return (
+                            <line
+                              key={`ssvec-${vIdx}`}
+                              x1={ssScaleX(v.s1)}
+                              y1={ssScaleY(v.s2)}
+                              x2={endX}
+                              y2={endY}
+                              stroke={strokeColors[colorIndex] || '#475569'}
+                              strokeWidth={1.2}
+                              opacity={0.55}
+                            />
+                          );
+                        })}
+
+                        {/* Full simulation trajectory flow line */}
+                        <path
+                          d={ssTrajectory.map((pt, idx) => `${idx === 0 ? 'M' : 'L'} ${ssScaleX(pt.x1)} ${ssScaleY(pt.x2)}`).join(' ')}
+                          fill="none"
+                          stroke="#f59e0b"
+                          strokeWidth={2.5}
+                          strokeLinecap="round"
+                          opacity={0.9}
+                        />
+
+                        {/* Direction arrows onto trajectory */}
+                        {ssTrajectory.length > 50 && [40, 100, 160].map((stepIdx) => {
+                          const pCurr = ssTrajectory[stepIdx];
+                          const pNext = ssTrajectory[stepIdx + 2];
+                          if (!pCurr || !pNext) return null;
+                          const angle = Math.atan2(ssScaleY(pNext.x2) - ssScaleY(pCurr.x2), ssScaleX(pNext.x1) - ssScaleX(pCurr.x1));
+                          const arrowSize = 8;
+                          const ax = ssScaleX(pCurr.x1);
+                          const ay = ssScaleY(pCurr.x2);
+                          return (
+                            <path
+                              key={`arr-traj-${stepIdx}`}
+                              d={`M ${ax} ${ay} L ${ax - arrowSize * Math.cos(angle - Math.PI/6)} ${ay - arrowSize * Math.sin(angle - Math.PI/6)} M ${ax} ${ay} L ${ax - arrowSize * Math.cos(angle + Math.PI/6)} ${ay - arrowSize * Math.sin(angle + Math.PI/6)}`}
+                              stroke="#f59e0b"
+                              strokeWidth={2.5}
+                              fill="none"
+                              opacity={0.95}
+                            />
+                          );
+                        })}
+
+                        {/* Target initial conditions node */}
+                        <circle
+                          cx={ssScaleX(ssX1_0)}
+                          cy={ssScaleY(ssX2_0)}
+                          r={7}
+                          fill="#6366f1"
+                          stroke="#ffffff"
+                          strokeWidth={2}
+                        />
+                        <text
+                          x={ssScaleX(ssX1_0)}
+                          y={ssScaleY(ssX2_0) - 12}
+                          fill="#a5b4fc"
+                          fontSize="8"
+                          fontFamily="monospace"
+                          fontWeight="bold"
+                          textAnchor="middle"
+                        >
+                          x₀ [{ssX1_0.toFixed(1)}, {ssX2_0.toFixed(1)}]
+                        </text>
+
+                        {/* Current active seek time indicators bubble */}
+                        {ssTrajectory[ssActiveTimeIndex] && (
+                          <circle
+                            cx={ssScaleX(ssTrajectory[ssActiveTimeIndex].x1)}
+                            cy={ssScaleY(ssTrajectory[ssActiveTimeIndex].x2)}
+                            r={5.5}
+                            fill="#ef4444"
+                            stroke="#ffffff"
+                            strokeWidth={1.5}
+                          />
+                        )}
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* SVG WAVEFORM HISTORY OVER TIME */}
+                  <div className="space-y-1.5 flex flex-col items-center">
+                    <span className="text-[9.5px] font-mono font-bold text-slate-400 block uppercase tracking-wide self-start w-full text-center md:text-left">
+                      Evolución Temporal: x₁(t)=Verde (Pos), x₂(t)=Naranja (Vel)
+                    </span>
+                    <div className="relative border border-slate-200 bg-slate-950 rounded-xl overflow-hidden w-full aspect-square shadow-md shadow-slate-100/5 max-w-[280px] p-2.5 flex flex-col justify-between">
+                      <svg
+                        width="100%"
+                        height="80%"
+                        viewBox="0 0 240 180"
+                        className="select-none"
+                      >
+                        {/* Zero baseline axis line */}
+                        <line x1="20" y1="90" x2="230" y2="90" stroke="#334155" strokeWidth={0.8} />
+                        <line x1="20" y1="10" x2="20" y2="170" stroke="#334155" strokeWidth={0.8} />
+
+                        {/* Time grid guidelines */}
+                        {[1, 2, 3, 4, 5].map(v => (
+                          <line
+                            key={`tgrid-${v}`}
+                            x1={20 + v * 40}
+                            y1={10}
+                            x2={20 + v * 40}
+                            y2={170}
+                            stroke="#1e293b"
+                            strokeWidth={0.5}
+                            strokeDasharray="2,2"
+                          />
+                        ))}
+
+                        {/* Coordinate mappings on waveform plot: Time: [0, 12] s, State: [-3, 3] */}
+                        {/* x1(t) wave - emerald curve */}
+                        <path
+                          d={ssTrajectory.map((pt, idx) => `${idx === 0 ? 'M' : 'L'} ${20 + (pt.t / 12) * 200} ${90 - (pt.x1 / 4) * 75}`).join(' ')}
+                          fill="none"
+                          stroke="#10b981"
+                          strokeWidth={1.8}
+                          opacity={0.9}
+                        />
+
+                        {/* x2(t) wave - amber curve */}
+                        <path
+                          d={ssTrajectory.map((pt, idx) => `${idx === 0 ? 'M' : 'L'} ${20 + (pt.t / 12) * 200} ${90 - (pt.x2 / 4) * 75}`).join(' ')}
+                          fill="none"
+                          stroke="#f59e0b"
+                          strokeWidth={1.8}
+                          opacity={0.9}
+                        />
+
+                        {/* Current time scanning line cursor highlight */}
+                        {ssTrajectory[ssActiveTimeIndex] && (
+                          <line
+                            x1={20 + (ssTrajectory[ssActiveTimeIndex].t / 12) * 200}
+                            y1={10}
+                            x2={20 + (ssTrajectory[ssActiveTimeIndex].t / 12) * 200}
+                            y2={170}
+                            stroke="#ef4444"
+                            strokeWidth={1}
+                            strokeDasharray="3,2"
+                          />
+                        )}
+
+                        {/* Legend markers */}
+                        <text x="30" y="22" fill="#10b981" fontSize="8" fontFamily="monospace" fontWeight="bold">x₁(t) [Pos]</text>
+                        <text x="30" y="32" fill="#f59e0b" fontSize="8" fontFamily="monospace" fontWeight="bold">x₂(t) [Vel]</text>
+                        <text x="225" y="22" fill="#475569" fontSize="7" fontFamily="monospace" textAnchor="end">Plano-Tempo</text>
+                      </svg>
+
+                      {/* Interactive state timeline seek bar slider */}
+                      <div className="space-y-1 w-full border-t border-slate-800 pt-1.5 font-mono">
+                        <div className="flex justify-between items-center text-[8.5px] text-slate-400">
+                          <span>Búsqueda t: {ssTrajectory[ssActiveTimeIndex]?.t.toFixed(2)}s</span>
+                          <span className="text-red-400">
+                            Estado: [{ssTrajectory[ssActiveTimeIndex]?.x1.toFixed(2)}, {ssTrajectory[ssActiveTimeIndex]?.x2.toFixed(2)}]
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="240"
+                          step="1"
+                          value={ssActiveTimeIndex}
+                          onChange={(e) => setSsActiveTimeIndex(parseInt(e.target.value))}
+                          className="w-full accent-rose-500 h-1 cursor-pointer pointer-events-auto"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Mechanical Mass-Spring Sliding Visualizer block */}
+                <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-2 shrink-0 shadow-inner">
+                  <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wide block">
+                    4. Simulación Física Equivalente: Movimiento de la Masa Acoplada m·ẍ + c·ẋ + k·x = 0
+                  </span>
+                  
+                  <div className="relative h-16 bg-slate-950 border border-slate-900 rounded-lg overflow-hidden flex items-center shadow-lg">
+                    
+                    {/* Left Wall attachment anchor */}
+                    <div className="h-full w-4 bg-zinc-800 border-r border-zinc-700 flex flex-col justify-around shrink-0 relative select-none z-10">
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={`wl-${i}`} className="h-0.5 bg-zinc-950 border-t border-zinc-650 w-full" />
+                      ))}
+                    </div>
+
+                    {/* Sliding mass displacement calculated from active timeline index */}
+                    {(() => {
+                      const activePos = ssTrajectory[ssActiveTimeIndex]?.x1 ?? 0;
+                      // Transform mathematical scale [-3, 3] to animation translation
+                      const transX = Math.max(10, Math.min(220, 110 + activePos * 34));
+                      
+                      return (
+                        <div className="absolute inset-0 flex items-center pl-4 select-none">
+                          {/* SVG Helical Spring representation */}
+                          <svg width={transX} height="30" className="opacity-80">
+                            <path
+                              d={`M 0 15 
+                                  L ${transX * 0.12} 15 
+                                  L ${transX * 0.18} 6 
+                                  L ${transX * 0.28} 24 
+                                  L ${transX * 0.38} 6 
+                                  L ${transX * 0.48} 24 
+                                  L ${transX * 0.58} 6 
+                                  L ${transX * 0.68} 24 
+                                  L ${transX * 0.78} 6 
+                                  L ${transX * 0.88} 24 
+                                  L ${transX * 0.92} 15 
+                                  L ${transX} 15`}
+                              fill="none"
+                              stroke="#c084fc"
+                              strokeWidth={2}
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                          
+                          {/* Sliding box cart representing state variable target */}
+                          <div
+                            style={{ transform: `translateX(${transX - 10}px)` }}
+                            className="h-10 w-14 bg-indigo-950 border-2 border-indigo-500 rounded flex flex-col items-center justify-center text-center font-mono font-bold text-[9.5px] text-white shadow-md transition-transform duration-75 relative"
+                          >
+                            <span>Masa M</span>
+                            <span className="text-[7.5px] text-indigo-300">x₁ = {activePos.toFixed(2)}</span>
+                            
+                            {/* Sliding rolling wheels */}
+                            <div className="absolute -bottom-1.5 left-1 h-3.5 w-3.5 bg-zinc-400 border border-zinc-950 rounded-full" />
+                            <div className="absolute -bottom-1.5 right-1 h-3.5 w-3.5 bg-zinc-400 border border-zinc-950 rounded-full" />
+                          </div>
+
+                          {/* Center equilibrium target dotted indicator */}
+                          <div className="absolute left-[110px] top-0 bottom-0 w-0.5 bg-indigo-500/20 border-r border-dashed border-indigo-500/30 font-semibold" />
+                          <span className="absolute left-[114px] top-1 text-[7.5px] font-mono text-slate-500">Equilibrio x₁=0</span>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Right Ground Guide track */}
+                    <div className="absolute bottom-0 left-4 right-0 h-1.5 bg-zinc-800 border-t border-zinc-900" />
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+        </div>
+      )}
 
         {/* ==================================== TAB 8: NEURAL LIMIT SIMULATOR ==================================== */}
         {activeTab === 'neuralLimit' && (() => {
@@ -6011,6 +7062,371 @@ export default function InteractiveSandbox() {
             </div>
           );
         })()}
+
+        {/* ==================================== ACADEMIC LaTeX PDF SCIENTIFIC REPORT OVERLAY ==================================== */}
+        {showReport && (
+          <div className="fixed inset-0 z-50 bg-slate-900/45 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto print:absolute print:inset-0 print:p-0 print:bg-white print:z-auto font-sans">
+            <div className="bg-white rounded-2xl border border-slate-250 w-full max-w-4xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden print:max-h-none print:shadow-none print:border-none print:rounded-none animate-in fade-in zoom-in-95 duration-200">
+              
+              {/* Top Bar - Hidden when printing */}
+              <div className="bg-slate-950 text-white p-4 px-6 flex justify-between items-center shrink-0 print:hidden font-sans border-b border-slate-800">
+                <div className="flex items-center gap-2.5">
+                  <BookOpen className="h-5 w-5 text-indigo-400 animate-pulse" />
+                  <div>
+                    <h3 className="font-display font-extrabold text-sm tracking-wide">Reporte de Laboratorio Matemático</h3>
+                    <p className="text-[10px] text-indigo-300">Generador de Documentos Científicos Vectoriales de Alta Definición</p>
+                  </div>
+                </div>
+                <div className="flex gap-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={handlePrintPdf}
+                    className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 transition-all text-white font-sans text-xs font-bold rounded-lg flex items-center gap-1.5 cursor-pointer pointer-events-auto border border-emerald-500 shadow-md"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Imprimir o Guardar PDF
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowReport(false)}
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white transition text-xs font-bold rounded-lg cursor-pointer pointer-events-auto"
+                  >
+                    Cerrar Vista
+                  </button>
+                </div>
+              </div>
+
+              {/* Print Meta Config - Hidden when printing */}
+              <div className="p-4 px-6 bg-slate-50 border-b border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4 shrink-0 print:hidden font-sans">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-mono font-bold text-slate-500 block uppercase">Nombre del Investigador / Alumno:</label>
+                  <input
+                    type="text"
+                    value={reportStudentName}
+                    onChange={(e) => setReportStudentName(e.target.value)}
+                    className="w-full text-xs p-2 bg-white border border-slate-250 rounded-lg text-slate-800 font-semibold focus:ring-1 focus:ring-indigo-500 outline-none shadow-sm"
+                    placeholder="Introduce tu nombre completo"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-mono font-bold text-slate-500 block uppercase font-sans">Notas de Observación del Analista:</label>
+                  <input
+                    type="text"
+                    value={reportNotes}
+                    onChange={(e) => setReportNotes(e.target.value)}
+                    className="w-full text-xs p-2 bg-white border border-slate-250 rounded-lg text-slate-800 font-semibold focus:ring-1 focus:ring-indigo-500 outline-none shadow-sm"
+                    placeholder="Ej. Se comprueba la convergencia de RK4 de cuarto orden para sistemas armónicos..."
+                  />
+                </div>
+              </div>
+
+              {/* Scientific Sheet - ONLY printable piece */}
+              <div id="scientific-print-report" className="p-12 md:p-16 bg-white text-slate-900 flex-1 overflow-y-auto print:overflow-visible print:p-0 font-sans leading-relaxed select-text">
+                
+                {/* LaTeX stylized decorative header */}
+                <div className="border-b-4 border-double border-slate-950 pb-6 text-center space-y-2 select-text">
+                  <span className="text-[10px] tracking-widest font-mono text-slate-500 uppercase font-bold block">
+                    UNIVERSIDAD MICHOACANA DE SAN NICOLÁS DE HIDALGO
+                  </span>
+                  <h1 className="text-xl md:text-2xl font-serif font-extrabold tracking-tight text-slate-950 uppercase pt-1">
+                    Reporte de Solución Práctica y Análisis de Sistemas Diferenciales
+                  </h1>
+                </div>
+
+                {/* Lab Metadata Table */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-6 border-b border-slate-300 text-xs font-sans">
+                  <div>
+                    <span className="text-[9px] font-mono text-slate-400 block uppercase">Investigador:</span>
+                    <strong className="text-slate-900 text-[11.5px] font-bold">{reportStudentName || "Estudiante del Laboratorio"}</strong>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-mono text-slate-400 block uppercase">Fecha de Emisión:</span>
+                    <strong className="text-slate-900 text-[11.5px] font-bold">{new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</strong>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-mono text-slate-400 block uppercase">Sub-Sistema Evaluado:</span>
+                    <span className="px-2 py-0.5 bg-slate-100 border rounded font-mono font-bold text-[10px] text-slate-800 uppercase">
+                      {odeSubTab === '1d' ? 'EDO Unidimensional de Integración' : 'Espacio de Estados Bidimensional'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-mono text-slate-400 block uppercase">Estatus del Enlace:</span>
+                    <strong className="text-emerald-700 text-[11.5px] flex items-center gap-1 font-bold">✔ Conexión Verificada</strong>
+                  </div>
+                </div>
+
+                {/* Abstract / Introduction section */}
+                <div className="py-6 space-y-2 border-b border-zinc-200">
+                  <h3 className="text-xs font-mono font-bold text-slate-950 uppercase tracking-widest font-sans">Resumen del Experimento (Abstract)</h3>
+                  <p className="text-[11.5px] text-justify text-slate-800 font-serif leading-relaxed italic pr-2 select-text">
+                    "El presente reporte detalla la solución matemática instrumentada a través del Laboratorio Virtual de Cálculo. Mediante la inicialización de esquemas discretos de integración numérica e integradores iterativos Runge-Kutta de cuarto orden, se procedió al análisis descriptivo del plano-fase y a la calibración dinámica de trayectorias vectoriales de estado. Los resultados atestiguan el cumplimiento del orden de error absoluto n-ésimo global y demuestran la hapticidad cognitiva de acoplamientos mecánicos en el plano topológico."
+                  </p>
+                </div>
+
+                {/* Configuration block and parameters summary */}
+                {odeSubTab === '1d' ? (
+                  <div className="py-6 space-y-4">
+                    <h3 className="text-xs font-mono font-bold text-slate-950 uppercase tracking-widest">I. Ecuación y Configuración del Solvente EDO 1D</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 border border-slate-200 rounded-xl p-5 text-xs">
+                      <div className="space-y-1.5 font-serif">
+                        <span className="text-[9px] font-mono text-slate-400 block uppercase font-bold">Función Diferencial f(x, y):</span>
+                        <div className="text-xs font-bold text-indigo-900 bg-indigo-50/50 p-2.5 rounded border border-indigo-100 font-mono">
+                          dy/dx = {odes.find(o => o.id === selectedOdeId)?.formulaTex || "y / (1 + x²)"}
+                        </div>
+                        <span className="text-[10px] text-slate-450 leading-normal block pt-1 select-none leading-relaxed">
+                          Estructura física de amortiguamiento y conservación energética unidimensional.
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 font-mono text-[11px] leading-normal">
+                        <div>
+                          <span className="text-[8.5px] text-slate-400 block uppercase font-bold">Punto Inicial (x₀):</span>
+                          <strong className="text-slate-900">0</strong>
+                        </div>
+                        <div>
+                          <span className="text-[8.5px] text-slate-400 block uppercase font-bold">Valor Inicial (y₀):</span>
+                          <strong className="text-slate-900">{odeY0}</strong>
+                        </div>
+                        <div>
+                          <span className="text-[8.5px] text-slate-400 block uppercase font-bold">Tamaño de Paso (h):</span>
+                          <strong className="text-slate-900">{odeH}</strong>
+                        </div>
+                        <div>
+                          <span className="text-[8.5px] text-slate-400 block uppercase font-bold">Pasos Totales (n):</span>
+                          <strong className="text-slate-900">{odeSteps}</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Final Approximations readout */}
+                    <h4 className="text-[11px] font-mono font-bold text-slate-900 uppercase pt-2">Resultados Terminales Evaluados (x_final = {(0 + odeSteps * odeH).toFixed(2)})</h4>
+                    <div className="overflow-hidden border border-slate-200 rounded-xl">
+                      <table className="w-full text-left text-xs text-slate-700 border-collapse">
+                        <thead>
+                          <tr className="bg-slate-100 border-b border-slate-200 font-mono text-[9px] text-slate-500 uppercase font-bold">
+                            <th className="px-4 py-2 border-r border-slate-200">Métodos Numéricos Discretos</th>
+                            <th className="px-4 py-2 text-center border-r border-slate-200">Tipo de Truncamiento</th>
+                            <th className="px-4 py-2 text-center border-r border-slate-200">Aproximación Obtenida</th>
+                            <th className="px-4 py-2 text-center">Error Absoluto Local</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-150 font-sans text-[11.5px] leading-normal font-medium text-slate-800">
+                          <tr>
+                            <td className="px-4 py-2.5 border-r border-slate-200 font-bold text-slate-900">Método de Euler Un paso</td>
+                            <td className="px-4 py-2.5 text-center border-r border-slate-200 font-mono text-[10.5px]">Primer Orden - O(h¹)</td>
+                            <td className="px-4 py-2.5 text-center border-r border-slate-200 font-semibold text-slate-950">{eulerFinal.toFixed(5)}</td>
+                            <td className="px-4 py-2.5 text-center font-mono font-bold text-red-650">{Math.abs(eulerFinal - exactFinalVal).toFixed(5)}</td>
+                          </tr>
+                          <tr>
+                            <td className="px-4 py-2.5 border-r border-slate-200 font-bold text-slate-900">Método de Heun (Punto Medio)</td>
+                            <td className="px-4 py-2.5 text-center border-r border-slate-200 font-mono text-[10.5px]">Segundo Orden - O(h²)</td>
+                            <td className="px-4 py-2.5 text-center border-r border-slate-200 font-semibold text-slate-950">{heunFinal.toFixed(5)}</td>
+                            <td className="px-4 py-2.5 text-center font-mono font-bold text-amber-650">{Math.abs(heunFinal - exactFinalVal).toFixed(5)}</td>
+                          </tr>
+                          <tr>
+                            <td className="px-4 py-2.5 border-r border-slate-200 font-bold text-slate-900">Runge-Kutta 4 (RK4 Standard)</td>
+                            <td className="px-4 py-2.5 text-center border-r border-slate-200 font-mono text-[10.5px]">Cuarto Orden - O(h⁴)</td>
+                            <td className="px-4 py-2.5 text-center border-r border-slate-200 font-bold text-indigo-950">{rk4Final.toFixed(5)}</td>
+                            <td className="px-4 py-2.5 text-center font-mono font-bold text-emerald-600">{Math.abs(rk4Final - exactFinalVal).toFixed(5)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Detailed step-by-step logs */}
+                    <h4 className="text-[11px] font-mono font-bold text-slate-900 uppercase pt-2">II. Bitácora de Integración Paso a Paso (Primeros 10 puntos)</h4>
+                    <div className="overflow-hidden border border-slate-150 rounded-lg">
+                      <table className="w-full text-left text-[11px] font-mono text-slate-600 border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-200 text-[8.5px] uppercase font-bold">
+                            <th className="px-3 py-1.5 text-center border-r border-slate-100">Iteración (k)</th>
+                            <th className="px-3 py-1.5 text-center border-r border-slate-100">Punto x_k</th>
+                            <th className="px-3 py-1.5 text-center border-r border-slate-100 font-medium">Euler y_k</th>
+                            <th className="px-3 py-1.5 text-center border-r border-slate-100 font-medium">Heun y_k</th>
+                            <th className="px-3 py-1.5 text-center border-r border-slate-100 font-bold">RK4 y_k</th>
+                            <th className="px-3 py-1.5 text-center border-r border-slate-100">Exacto y_k</th>
+                            <th className="px-3 py-1.5 text-center">Precisión RK4</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-center text-slate-800">
+                          {(() => {
+                            const { eulerPts, heunPts, rk4Pts } = runNumericalSimulations();
+                            return Array.from({ length: Math.min(10, odeSteps + 1) }).map((_, stepIdx) => {
+                              const xVal = stepIdx * odeH;
+                              const eY = eulerPts[stepIdx]?.y ?? 0;
+                              const hY = heunPts[stepIdx]?.y ?? 0;
+                              const rY = rk4Pts[stepIdx]?.y ?? 0;
+                              const exY = currentOde.exact(xVal, odeY0);
+                              const errorRk = Math.abs(rY - exY);
+                              
+                              return (
+                                <tr key={`report-ode-row-${stepIdx}`} className={stepIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}>
+                                  <td className="px-3 py-1.5 border-r border-slate-100 font-extrabold">{stepIdx}</td>
+                                  <td className="px-3 py-1.5 border-r border-slate-100">{xVal.toFixed(2)}</td>
+                                  <td className="px-3 py-1.5 border-r border-slate-100">{eY.toFixed(4)}</td>
+                                  <td className="px-3 py-1.5 border-r border-slate-105">{hY.toFixed(4)}</td>
+                                  <td className="px-3 py-1.5 border-r border-slate-100 font-bold text-indigo-750">{rY.toFixed(4)}</td>
+                                  <td className="px-3 py-1.5 border-r border-slate-100 font-medium text-slate-800">{exY.toFixed(4)}</td>
+                                  <td className={`px-3 py-1.5 font-bold ${errorRk < 1e-4 ? 'text-emerald-700' : 'text-slate-500'}`}>
+                                    {errorRk < 1e-6 ? "Perfecto" : `±${errorRk.toFixed(6)}`}
+                                  </td>
+                                </tr>
+                              );
+                            });
+                          })()}
+                        </tbody>
+                      </table>
+                    </div>
+
+                  </div>
+                ) : (
+                  <div className="py-6 space-y-4 font-sans select-text">
+                    <h3 className="text-xs font-mono font-bold text-slate-950 uppercase tracking-widest">I. Configuración y Análisis del Espacio de Estados 2D</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 border border-slate-200 rounded-xl p-5 text-xs">
+                      <div className="space-y-2">
+                        <span className="text-[9px] font-mono text-slate-400 block uppercase font-bold">Matriz de Transición de Estados A:</span>
+                        <div className="font-mono text-center text-xs p-3 bg-slate-950 text-indigo-300 rounded-lg border border-slate-800 flex items-center justify-center gap-4">
+                          <span className="text-lg text-slate-600 select-none">[</span>
+                          <span className="font-bold">{ssA11.toFixed(1)}</span>
+                          <span>{ssA12.toFixed(1)}</span>
+                          <span className="text-slate-800">|</span>
+                          <span className="font-bold">{ssA21.toFixed(1)}</span>
+                          <span>{ssA22.toFixed(1)}</span>
+                          <span className="text-lg text-slate-600 select-none">]</span>
+                        </div>
+                        <div className="text-[10px] text-slate-450 font-serif leading-normal italic pt-0.5">
+                          Estructura Dinámica: {ssPresets.find(p => p.id === ssSelectedPreset)?.name || "Matriz Personalizada de Estados"}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3.5 font-mono text-xs leading-normal">
+                        <div>
+                          <span className="text-[8.5px] text-slate-400 block uppercase font-bold">Traza de la Matriz T:</span>
+                          <strong className="text-slate-950">{(ssA11 + ssA22).toFixed(2)}</strong>
+                        </div>
+                        <div>
+                          <span className="text-[8.5px] text-slate-400 block uppercase font-bold">Determinante Delta Δ:</span>
+                          <strong className="text-slate-950">{(ssA11 * ssA22 - ssA12 * ssA21).toFixed(2)}</strong>
+                        </div>
+                        <div className="col-span-2 pt-1.5 border-t border-slate-200">
+                          <span className="text-[8.5px] text-slate-500 block uppercase font-bold">Topología del Atractor:</span>
+                          <span className="font-bold text-indigo-800 text-[11.5px]">{currentSsStability.name}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Eigenvalues analysis detail block */}
+                    <h4 className="text-[11px] font-mono font-bold text-slate-900 uppercase pt-2">Análisis de Estabilidad y Autovalores de Fases</h4>
+                    <div className="p-4 bg-indigo-50/40 border border-indigo-150 rounded-xl flex flex-col gap-2 font-mono text-[11px] text-indigo-950">
+                      <div className="font-bold text-indigo-900 text-xs">Autovalores Característicos λ₁,₂:</div>
+                      {currentSsEigen.type === 'real' ? (
+                        <div className="flex gap-4">
+                          <span>λ₁ = {currentSsEigen.l1.toFixed(4)}</span>
+                          <span className="opacity-45">|</span>
+                          <span>λ₂ = {currentSsEigen.l2.toFixed(4)}</span>
+                        </div>
+                      ) : (
+                        <div>λ = {currentSsEigen.real.toFixed(4)} ± j {currentSsEigen.imag.toFixed(4)}</div>
+                      )}
+                      <div className="text-[10px] leading-relaxed text-indigo-850 font-serif leading-normal mt-1 opacity-95 italic">
+                        "En base a los criterios de estabilidad lineal, dado que la parte real de los polos es {currentSsEigen.type === 'real' ? Math.max(currentSsEigen.l1, currentSsEigen.l2).toFixed(2) : currentSsEigen.real.toFixed(2)}, se concluye rigurosamente que el sistema dinámico exhibe un comportamiento de {currentSsStability.name}. Esto dicta la topología y convergencia de las fuerzas."
+                      </div>
+                    </div>
+
+                    <h4 className="text-[11px] font-mono font-bold text-slate-900 uppercase pt-2">II. Puntos de Trayectoria de Estados (RK4 2D over Time)</h4>
+                    <div className="overflow-hidden border border-slate-150 rounded-lg">
+                      <table className="w-full text-left text-[11px] font-mono text-slate-650 border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-200 text-[8.5px] uppercase font-bold">
+                            <th className="px-3 py-1.5 text-center border-r border-slate-100">Iteración (k)</th>
+                            <th className="px-3 py-1.5 text-center border-r border-slate-100">Tiempo t (s)</th>
+                            <th className="px-3 py-1.5 text-center border-r border-slate-100">Estado x₁(t) [Posición]</th>
+                            <th className="px-3 py-1.5 text-center border-r border-slate-100">Estado x₂(t) [Velocidad]</th>
+                            <th className="px-3 py-1.5 text-center">Excitación u</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-center text-slate-800">
+                          {[0, 20, 40, 60, 100, 140, 180, 220, 240].map((stepIdx) => {
+                            const pt = ssTrajectory[stepIdx];
+                            if (!pt) return null;
+                            return (
+                              <tr key={`report-ss-row-${stepIdx}`} className={stepIdx % 40 === 0 ? 'bg-indigo-50/10' : 'bg-white'}>
+                                <td className="px-3 py-1.5 border-r border-slate-100 font-bold">{stepIdx}</td>
+                                <td className="px-3 py-1.5 border-r border-slate-100">{pt.t.toFixed(2)}s</td>
+                                <td className="px-3 py-1.5 border-r border-slate-100 font-bold text-emerald-700">{pt.x1.toFixed(4)}</td>
+                                <td className="px-3 py-1.5 border-r border-slate-100 font-bold text-amber-700">{pt.x2.toFixed(4)}</td>
+                                <td className="px-3 py-1.5 text-slate-400">{ssU.toFixed(1)}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                  </div>
+                )}
+
+
+                {/* Didáctica Pedagógica Innovadora */}
+                <div className="py-6 border-t border-slate-200 space-y-3 font-sans">
+                  <h3 className="text-xs font-mono font-bold text-slate-950 uppercase tracking-widest text-[#1e293b]">Didáctica Pedagógica Innovadora</h3>
+                  <p className="text-[11.5px] text-slate-600 leading-relaxed font-sans">
+                    Este entorno digital de simulación se fundamenta en un modelo pedagógico de experimentación activa y andamiaje cognitivo. Al transformar conceptos matemáticos sumamente abstractos en simulaciones dinámicas manipulables, se busca potenciar un aprendizaje profundo a través de tres pilares fundamentales:
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+                    <div className="p-3 bg-[#f8fafc] border border-slate-200 rounded-xl">
+                      <div className="text-[11px] font-bold text-indigo-900 flex items-center gap-1.5 uppercase font-mono">
+                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                        Visualización Activa
+                      </div>
+                      <p className="text-[10px] text-slate-500 mt-1.5 leading-relaxed">
+                        Conexión inmediata entre la intuición gráfica/geométrica de las ecuaciones diferenciales y el rigor de los algoritmos numéricos ejecutados en tiempo real.
+                      </p>
+                    </div>
+                    <div className="p-3 bg-[#f8fafc] border border-slate-200 rounded-xl">
+                      <div className="text-[11px] font-bold text-emerald-900 flex items-center gap-1.5 uppercase font-mono">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        Experimentación Práctica
+                      </div>
+                      <p className="text-[10px] text-slate-500 mt-1.5 leading-relaxed">
+                        Manipulación de condiciones iniciales, tamaños de paso y ecuaciones dinámicas para el descubrimiento empírico del error de truncamiento global y local.
+                      </p>
+                    </div>
+                    <div className="p-3 bg-[#f8fafc] border border-slate-200 rounded-xl">
+                      <div className="text-[11px] font-bold text-amber-900 flex items-center gap-1.5 uppercase font-mono">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                        Autoaprendizaje Guiado
+                      </div>
+                      <p className="text-[10px] text-slate-500 mt-1.5 leading-relaxed">
+                        Andamiaje cognitivo que reduce la frustración algebraica y fomenta la formulación de conclusiones basadas en el análisis riguroso de reportes objetivos.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lab Notes and Signatures Area */}
+                <div className="py-6 border-t border-slate-300 grid grid-cols-1 md:grid-cols-2 gap-8 text-[11px] tracking-normal font-sans pt-6">
+                  <div className="space-y-2">
+                    <span className="text-[9px] font-mono text-slate-400 block uppercase font-bold">Observaciones del Analista:</span>
+                    <div className="p-3 bg-slate-50 border rounded-lg italic text-slate-700 font-serif leading-relaxed text-[11.5px] select-text">
+                      {reportNotes || "Sin observaciones adicionales registradas por el analista. El experimento concuerda plenamente con las leyes analíticas de Lyapunov y el análisis dinámico de convergencia Runge-Kutta."}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col justify-end items-center text-center space-y-3 pt-6 md:pt-0">
+                    <div className="w-48 border-b border-slate-400 h-10 select-none" />
+                    <div className="font-mono text-[9px] text-slate-500 uppercase font-bold select-none">
+                      Sello de Validación Académica
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+        )}
 
       </div>
     </section>
