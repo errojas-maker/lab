@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Mail, Phone, MapPin, Clock, Send, CheckCircle, AlertCircle } from 'lucide-react';
+import { Mail, Phone, MapPin, Clock, Send, CheckCircle, AlertCircle, Copy, ExternalLink } from 'lucide-react';
 import { personalInfo } from '../data';
 import escudoImg from '../escudo.svg';
 
@@ -15,11 +15,48 @@ export default function Contact() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState(false);
+  const [lastEmailData, setLastEmailData] = useState<{
+    to: string;
+    subject: string;
+    body: string;
+  } | null>(null);
+
+  // Reconstitución de correo en tiempo de ejecución (Cifrado dinámico contra robots cosechadores de spam)
+  const getSecureEmail = () => {
+    const parts = [
+      'ra', 'da', 'i', '.', 'ro', 'ja', 's',
+      '@',
+      'um', 'ic', 'h', '.', 'mx'
+    ];
+    return parts.join('');
+  };
 
   const roles = ['Estudiante', 'Profesor / Investigador', 'Editor de Revista', 'Otro'];
 
   const validateEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const copyMailContent = () => {
+    if (!lastEmailData) return;
+    const fullText = `Para: ${lastEmailData.to}\nAsunto: ${lastEmailData.subject}\n\n${lastEmailData.body}`;
+    navigator.clipboard.writeText(fullText);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 3000);
+  };
+
+  const copyDirectEmail = (emailStr: string) => {
+    navigator.clipboard.writeText(emailStr);
+    setCopiedEmail(true);
+    setTimeout(() => setCopiedEmail(false), 3000);
+  };
+
+  const retryMailto = () => {
+    if (!lastEmailData) return;
+    const mailtoUrl = `mailto:${lastEmailData.to}?subject=${encodeURIComponent(lastEmailData.subject)}&body=${encodeURIComponent(lastEmailData.body)}`;
+    window.location.href = mailtoUrl;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -39,10 +76,26 @@ export default function Contact() {
 
     setSubmitting(true);
 
-    // Simulate sending emails through server endpoint delay
+    const emailSubject = `[Formulario Web - ${formData.role}] ${formData.subject}`;
+    const emailBody = `Hola Dr. Erick Rojas,\n\nMi nombre es ${formData.name} (${formData.email}, perfil: ${formData.role}).\n\n` +
+      `Mensaje:\n${formData.message}\n\n---\nEnviado desde el Portal Académico del Dr. Erick Radaí Rojas.`;
+
+    const mailData = {
+      to: getSecureEmail(),
+      subject: emailSubject,
+      body: emailBody
+    };
+
+    setLastEmailData(mailData);
+
+    // Provide immediate browser client window launch & state dispatch
     setTimeout(() => {
       setSubmitting(false);
       setSuccess(true);
+      
+      const mailtoUrl = `mailto:${mailData.to}?subject=${encodeURIComponent(mailData.subject)}&body=${encodeURIComponent(mailData.body)}`;
+      window.location.href = mailtoUrl;
+
       setFormData({
         name: '',
         email: '',
@@ -50,11 +103,7 @@ export default function Contact() {
         subject: '',
         message: ''
       });
-      // clear success banner after some time
-      setTimeout(() => {
-        setSuccess(false);
-      }, 5000);
-    }, 1500);
+    }, 1200);
   };
 
   return (
@@ -100,17 +149,33 @@ export default function Contact() {
               </p>
 
               {/* Physical details layout cards */}
-              <div className="space-y-4 pt-4 font-normal text-xs text-slate-600">
+              <div className="space-y-4 pt-4 font-normal text-xs text-slate-600 font-sans">
 
                 <div className="flex items-start space-x-3.5">
-                  <div className="h-9 w-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 flex-shrink-0">
+                  <button 
+                    type="button"
+                    onClick={() => copyDirectEmail(getSecureEmail())}
+                    title="Click para copiar correo"
+                    className="h-9 w-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 hover:bg-indigo-105 hover:text-indigo-850 active:scale-95 transition flex-shrink-0 cursor-pointer"
+                  >
                     <Mail className="h-4.5 w-4.5" />
-                  </div>
-                  <div>
-                    <span className="block font-semibold text-slate-800 font-display">Contacto Seguro</span>
-                    <span className="block text-slate-500 mt-0.5">
-                      Disponible a través del formulario de mensaje directo en esta sección.
-                    </span>
+                  </button>
+                  <div className="flex-1">
+                    <span className="block font-semibold text-slate-800 font-display">Buzón Institucional Seguro</span>
+                    <button
+                      type="button"
+                      onClick={() => copyDirectEmail(getSecureEmail())}
+                      className="text-xs text-indigo-600 mt-1 inline-flex items-center gap-1.5 hover:text-indigo-800 font-medium transition cursor-pointer bg-indigo-50/70 hover:bg-indigo-100/70 px-2.5 py-1 rounded border border-indigo-200/30"
+                      title="Copiar cuenta segura"
+                    >
+                      <span>Obtener Cuenta Protegida (Copiar)</span>
+                      <Copy className="h-3 w-3 text-indigo-500" />
+                    </button>
+                    {copiedEmail && (
+                      <span className="block text-[10px] text-emerald-600 mt-0.5 font-medium animate-pulse font-sans">
+                        ✓ Copiado al portapapeles
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -130,7 +195,7 @@ export default function Contact() {
 
           {/* Form Panel (Right Column) */}
           <div className="lg:col-span-7 bg-slate-50 border border-slate-200 p-6 rounded-2xl shadow-sm math-grid">
-            <h3 className="font-display font-bold text-xl text-slate-800 mb-6">
+            <h3 className="font-display font-bold text-xl text-slate-800 mb-6 font-sans">
               Enviar Propuesta o Consulta
             </h3>
 
@@ -140,10 +205,11 @@ export default function Contact() {
               <AnimatePresence>
                 {error && (
                   <motion.div
+                    key="error-msg"
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
-                    className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl flex items-center gap-2.5 text-xs font-medium"
+                    className="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl flex items-center gap-2.5 text-xs font-medium font-sans"
                   >
                     <AlertCircle className="h-4 w-4 text-rose-600 flex-shrink-0" />
                     <span>{error}</span>
@@ -152,17 +218,50 @@ export default function Contact() {
 
                 {success && (
                   <motion.div
+                    key="success-msg"
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
-                    className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl flex items-start gap-2.5 text-xs font-normal"
+                    className="p-4 bg-emerald-50 border border-emerald-250 text-emerald-900 rounded-xl flex items-start gap-2.5 text-xs font-normal font-sans"
                   >
                     <CheckCircle className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold">¡Mensaje enviado con éxito!</p>
-                      <p className="text-[11px] text-emerald-700 mt-1">
-                        Su propuesta ha sido procesada de manera segura. El Dr. Erick recibirá esta información en su buzón institucional de manera directa.
+                      <p className="font-bold text-emerald-950 text-xs uppercase font-mono tracking-wider">¡Formulario listo para procesar!</p>
+                      <p className="text-[11.5px] text-emerald-800 mt-1 leading-relaxed">
+                        Para garantizar que el correo se transmita con seguridad, la página ha solicitado abrir tu cliente de correo predeterminado (como Outlook, Mail o Gmail) con el destinatario institucional y tus campos ya precargados.
                       </p>
+                      <p className="text-[11px] text-slate-500 mt-2.5 italic leading-normal border-t border-emerald-150 pt-2">
+                        Si tu sistema o navegador bloqueó la apertura automática, utiliza estas opciones para asegurar la entrega directa:
+                      </p>
+                      
+                      <div className="flex flex-wrap gap-2 mt-3 font-sans">
+                        <button
+                          type="button"
+                          onClick={retryMailto}
+                          className="flex items-center gap-1 py-1.5 px-2.5 bg-indigo-900 hover:bg-slate-800 text-white rounded-lg text-[10px] font-semibold transition cursor-pointer"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          Abrir correo de nuevo
+                        </button>
+                        
+                        <button
+                          type="button"
+                          onClick={copyMailContent}
+                          className="flex items-center gap-1 py-1.5 px-2.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 rounded-lg text-[10px] font-semibold transition cursor-pointer"
+                        >
+                          <Copy className="h-3 w-3 text-slate-400" />
+                          {copied ? "✓ Copiado" : "Copiar plantilla redactada"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => copyDirectEmail(getSecureEmail())}
+                          className="flex items-center gap-1 py-1.5 px-2.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 rounded-lg text-[10px] font-semibold transition cursor-pointer"
+                        >
+                          <Mail className="h-3 w-3 text-slate-400" />
+                          {copiedEmail ? "✓ Correo Copiado" : "Copiar dirección"}
+                        </button>
+                      </div>
                     </div>
                   </motion.div>
                 )}
