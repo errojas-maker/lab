@@ -8,7 +8,8 @@ import Courses from './components/Courses';
 import InteractiveSandbox from './components/InteractiveSandbox';
 import Contact from './components/Contact';
 import IntroAnimation from './components/IntroAnimation';
-import { ArrowUp, Award, ExternalLink, GraduationCap, Mail } from 'lucide-react';
+import VisitorLog from './components/VisitorLog';
+import { ArrowUp, Award, ExternalLink, GraduationCap, Mail, Terminal } from 'lucide-react';
 import { personalInfo } from './data';
 import escudoImg from './escudo.svg';
 
@@ -16,6 +17,7 @@ export default function App() {
   const [activeSection, setActiveSection] = useState('sobre-mi');
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isIntroPlaying, setIsIntroPlaying] = useState(true);
+  const [isLogOpen, setIsLogOpen] = useState(false);
 
   // Disable body scroll when intro is active
   useEffect(() => {
@@ -75,6 +77,9 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {/* Visitor Access Log modal overlay */}
+      <VisitorLog isOpen={isLogOpen} onClose={() => setIsLogOpen(false)} />
+
       {/* Sticky header controls */}
       <Header activeSection={activeSection} setActiveSection={setActiveSection} />
 
@@ -114,7 +119,7 @@ export default function App() {
             </div>
 
             {/* Quick footer socials */}
-            <div className="flex flex-wrap gap-4 text-slate-500 font-mono">
+            <div className="flex flex-wrap gap-4 text-slate-500 font-mono items-center">
               <a href={personalInfo.researchGate} target="_blank" rel="noreferrer" className="hover:text-white transition flex items-center gap-1">
                 ResearchGate <ExternalLink className="h-3 w-3" />
               </a>
@@ -124,6 +129,13 @@ export default function App() {
               <a href="#contacto" className="hover:text-white transition flex items-center gap-1">
                 Contacto <Mail className="h-3 w-3" />
               </a>
+              <span className="text-slate-800 hidden sm:inline">|</span>
+              <button 
+                onClick={() => setIsLogOpen(true)}
+                className="hover:text-indigo-400 text-indigo-400/90 transition flex items-center gap-1 cursor-pointer font-sans text-xs font-semibold focus:outline-none"
+              >
+                <Terminal className="h-3.5 w-3.5" /> Bitácora de Accesos
+              </button>
             </div>
           </div>
 
