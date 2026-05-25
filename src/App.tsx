@@ -7,6 +7,7 @@ import Publications from './components/Publications';
 import Courses from './components/Courses';
 import InteractiveSandbox from './components/InteractiveSandbox';
 import Contact from './components/Contact';
+import IntroAnimation from './components/IntroAnimation';
 import { ArrowUp, Award, ExternalLink, GraduationCap, Mail } from 'lucide-react';
 import { personalInfo } from './data';
 import escudoImg from './escudo.svg';
@@ -14,6 +15,19 @@ import escudoImg from './escudo.svg';
 export default function App() {
   const [activeSection, setActiveSection] = useState('sobre-mi');
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [isIntroPlaying, setIsIntroPlaying] = useState(true);
+
+  // Disable body scroll when intro is active
+  useEffect(() => {
+    if (isIntroPlaying) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isIntroPlaying]);
 
   // Monitor scroll progress to auto update state highlight on headers
   useEffect(() => {
@@ -54,6 +68,13 @@ export default function App() {
   return (
     <div className="bg-slate-50 min-h-screen text-slate-700 flex flex-col font-sans selection:bg-indigo-100 selection:text-indigo-900">
       
+      {/* Professional intro animated portal screen */}
+      <AnimatePresence mode="wait">
+        {isIntroPlaying && (
+          <IntroAnimation onComplete={() => setIsIntroPlaying(false)} />
+        )}
+      </AnimatePresence>
+
       {/* Sticky header controls */}
       <Header activeSection={activeSection} setActiveSection={setActiveSection} />
 
