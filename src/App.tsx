@@ -9,6 +9,7 @@ import InteractiveSandbox from './components/InteractiveSandbox';
 import Contact from './components/Contact';
 import IntroAnimation from './components/IntroAnimation';
 import VisitorLog from './components/VisitorLog';
+import HackSimulation from './components/HackSimulation';
 import { ArrowUp, Award, ExternalLink, GraduationCap, Mail, Terminal } from 'lucide-react';
 import { personalInfo } from './data';
 import escudoImg from './escudo.svg';
@@ -18,6 +19,7 @@ export default function App() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isIntroPlaying, setIsIntroPlaying] = useState(true);
   const [isLogOpen, setIsLogOpen] = useState(false);
+  const [isHackOpen, setIsHackOpen] = useState(false);
 
   // Disable body scroll when intro is active
   useEffect(() => {
@@ -79,6 +81,18 @@ export default function App() {
 
       {/* Visitor Access Log modal overlay */}
       <VisitorLog isOpen={isLogOpen} onClose={() => setIsLogOpen(false)} />
+
+      {/* Hollywood Hack Simulation easter egg */}
+      <HackSimulation isOpen={isHackOpen} onClose={() => setIsHackOpen(false)} />
+
+      {/* Hidden Easter Egg π Symbol at the absolute bottom left of the viewport */}
+      <div 
+        onClick={() => setIsHackOpen(true)}
+        className="fixed bottom-4 left-4 z-[100] font-mono text-xs md:text-sm text-slate-400 hover:text-red-600 cursor-pointer select-none opacity-40 hover:opacity-100 transition-all duration-300 hover:scale-125 bg-slate-200/40 hover:bg-slate-200/80 p-1 px-2 rounded border border-slate-300/50 shadow-sm"
+        title="Constante Pi - Easter Egg"
+      >
+        π
+      </div>
 
       {/* Sticky header controls */}
       <Header activeSection={activeSection} setActiveSection={setActiveSection} />
