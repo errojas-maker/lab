@@ -226,7 +226,7 @@ function generatePythonCode(p: BiotechParams): string {
   return `# =====================================================================
 # SIMULACIÓN DE DINÁMICA DE LACTOGÉNESIS (MENG ET AL., JCI)
 # Estudio de Referencia: Meng et al., Journal of Clinical Investigation
-# DOI: https://doi.org/10.1172/JCI177700
+# DOI: https://doi.org/10.1172/JCI197311
 # Modelo de 3 EDOs no lineales con Resistencia a la Insulina y Mitocondria
 # Generado por el Asistente Didáctico de Modelado Matemático en Biotecnología
 # =====================================================================
@@ -391,7 +391,7 @@ export default function BiotechOdeSimulator() {
   const [messages, setMessages] = useState<Array<{ sender: 'user' | 'assistant'; text: string; code?: string; timestamp: string }>>([
     {
       sender: 'assistant',
-      text: '¡Bienvenido al módulo de Modelado Matemático en Biotecnología! Soy tu Profesor Universitario Especialista en Biología de Sistemas y Métodos Numéricos.\n\nAquí analizamos el sistema de 3 EDOs derivado del estudio fundamental de Meng et al. (The Journal of Clinical Investigation, DOI: https://doi.org/10.1172/JCI177700) sobre la dinámica de la lactogénesis humana bajo resistencia a la insulina y disfunción mitocondrial.\n\nPuedes ejecutar comandos rápidos (/simular, /equilibrio, /jacobiana, /ejercicio) o consultar libremente.',
+      text: '¡Bienvenido al módulo de Modelado Matemático en Biotecnología! Soy tu Profesor Universitario Especialista en Biología de Sistemas y Métodos Numéricos.\n\nAquí analizamos el sistema de 3 EDOs derivado del estudio fundamental de Meng et al. (The Journal of Clinical Investigation, DOI: https://doi.org/10.1172/JCI197311) sobre la dinámica de la lactogénesis humana bajo resistencia a la insulina y disfunción mitocondrial.\n\nPuedes ejecutar comandos rápidos (/simular, /equilibrio, /jacobiana, /ejercicio) o consultar libremente.',
       timestamp: '10:30 AM'
     }
   ]);
@@ -480,9 +480,9 @@ export default function BiotechOdeSimulator() {
       setShowExerciseSolution(false);
     } else {
       // General question answering in professor persona
-      botResponse = `Estimado estudiante: analizando tu consulta bajo el prisma de la biología de sistemas y el estudio de Meng et al. (The Journal of Clinical Investigation, DOI: https://doi.org/10.1172/JCI177700):\n\n` +
+      botResponse = `Estimado estudiante: analizando tu consulta bajo el prisma de la biología de sistemas y el estudio de Meng et al. (The Journal of Clinical Investigation, DOI: https://doi.org/10.1172/JCI197311):\n\n` +
         `En este modelo no lineal, la variable clave de control es el índice de sensibilidad $S_I$. Cuando $S_I$ se degrada (resistencia a la insulina), no solamente cae el ingreso de glucosa ($J_{in}$), sino que el acoplamiento no lineal $k_1 \\cdot G \\cdot M$ provoca una desincronización bioenergética. La masa mitocondrial $M(t)$ requiere glucosa como señal trófica y sustrato (término $\\alpha \\cdot G$); si $G(t)$ disminuye, la tasa de recambio mitocondrial $\\gamma \\cdot M$ domina, reduciendo $M$ y por ende derrumbando la síntesis de leche $L(t)$ de forma no lineal.\n\n` +
-        `Puedes consultar el paper original en https://doi.org/10.1172/JCI177700, simular este comportamiento en tiempo real con los controles deslizantes o ejecutar \`/simular\`, \`/equilibrio\`, \`/jacobiana\` o \`/ejercicio\`.`;
+        `Puedes consultar el paper original en https://doi.org/10.1172/JCI197311, simular este comportamiento en tiempo real con los controles deslizantes o ejecutar \`/simular\`, \`/equilibrio\`, \`/jacobiana\` o \`/ejercicio\`.`;
     }
 
     setMessages(prev => [...prev, userMsg, { sender: 'assistant', text: botResponse, code: generatedCode, timestamp: time }]);
@@ -591,11 +591,11 @@ export default function BiotechOdeSimulator() {
             <p className="text-sm text-slate-300 leading-relaxed font-sans">
               Modelo matemático de 3 Ecuaciones Diferenciales Ordinarias derivado del estudio fundamental de{' '}
               <a 
-                href="https://doi.org/10.1172/JCI177700" 
+                href="https://doi.org/10.1172/JCI197311" 
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className="inline-flex items-center gap-1 text-indigo-300 hover:text-white underline decoration-indigo-400 font-semibold transition"
-                title="Consultar artículo original en The Journal of Clinical Investigation: DOI 10.1172/JCI177700"
+                title="Consultar artículo original en The Journal of Clinical Investigation: DOI 10.1172/JCI197311"
               >
                 Meng et al. (Journal of Clinical Investigation)
                 <ExternalLink className="h-3.5 w-3.5 inline shrink-0 text-indigo-400" />
@@ -604,13 +604,13 @@ export default function BiotechOdeSimulator() {
             </p>
             <div className="pt-2 flex flex-wrap items-center gap-2">
               <a
-                href="https://doi.org/10.1172/JCI177700"
+                href="https://doi.org/10.1172/JCI197311"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/40 rounded-lg text-indigo-200 hover:text-white text-xs font-mono font-medium transition cursor-pointer group"
               >
                 <BookOpen className="h-3 w-3 text-indigo-400 group-hover:text-indigo-200 transition" />
-                <span>DOI: <strong>10.1172/JCI177700</strong></span>
+                <span>DOI: <strong>10.1172/JCI197311</strong></span>
                 <ExternalLink className="h-3 w-3 text-indigo-400 group-hover:text-white" />
               </a>
               <span className="text-[11px] text-slate-400 font-sans">
@@ -1087,13 +1087,13 @@ export default function BiotechOdeSimulator() {
                   <Info className="h-4 w-4 text-indigo-600" /> Interpretación Fisiológica Multidisciplinaria
                 </h5>
                 <a
-                  href="https://doi.org/10.1172/JCI177700"
+                  href="https://doi.org/10.1172/JCI197311"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-indigo-700 hover:text-indigo-900 text-[11px] font-mono font-semibold transition group shadow-2xs"
-                  title="Consultar artículo: Meng et al., Journal of Clinical Investigation (DOI: 10.1172/JCI177700)"
+                  title="Consultar artículo: Meng et al., Journal of Clinical Investigation (DOI: 10.1172/JCI197311)"
                 >
-                  <span>Meng et al. (JCI) · doi:10.1172/JCI177700</span>
+                  <span>Meng et al. (JCI) · doi:10.1172/JCI197311</span>
                   <ExternalLink className="h-3 w-3 text-indigo-500 group-hover:text-indigo-700" />
                 </a>
               </div>
@@ -1592,24 +1592,24 @@ export default function BiotechOdeSimulator() {
 
         <div className="flex flex-col sm:flex-row md:flex-col lg:flex-row items-stretch sm:items-center gap-2.5 shrink-0 w-full md:w-auto">
           <a
-            href="https://doi.org/10.1172/JCI177700"
+            href="https://doi.org/10.1172/JCI197311"
             target="_blank"
             rel="noopener noreferrer"
             className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-mono font-bold transition flex items-center justify-center gap-2 shadow-md hover:shadow-indigo-500/20 group cursor-pointer"
-            title="Abrir DOI https://doi.org/10.1172/JCI177700"
+            title="Abrir DOI https://doi.org/10.1172/JCI197311"
           >
-            <span>doi:10.1172/JCI177700</span>
+            <span>doi:10.1172/JCI197311</span>
             <ExternalLink className="h-3.5 w-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition" />
           </a>
           <a
-            href="https://www.jci.org/articles/view/177700"
+            href="https://www.jci.org/articles/view/197311"
             target="_blank"
             rel="noopener noreferrer"
             className="px-3.5 py-2.5 bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl text-xs font-sans font-medium transition text-center border border-slate-700 flex items-center justify-center gap-1.5 cursor-pointer"
-            title="Consultar artículo completo en el portal de The Journal of Clinical Investigation"
+            title="Consultar artículo completo en el portal de The Journal of Clinical Investigation (JCI)"
           >
             <BookOpen className="h-3.5 w-3.5 text-indigo-400" />
-            <span>Consultar Paper en JCI</span>
+            <span>Consultar Paper en JCI (197311)</span>
           </a>
         </div>
       </div>

@@ -85,14 +85,17 @@ export default function App() {
       {/* Hollywood Hack Simulation easter egg */}
       <HackSimulation isOpen={isHackOpen} onClose={() => setIsHackOpen(false)} />
 
-      {/* Hidden Easter Egg π Symbol at the absolute bottom left of the viewport */}
-      <div 
+      {/* Easter Egg π Symbol at the absolute bottom left of the viewport */}
+      <button 
+        type="button"
         onClick={() => setIsHackOpen(true)}
-        className="fixed bottom-4 left-4 z-[100] font-mono text-xs md:text-sm text-slate-400 hover:text-red-600 cursor-pointer select-none opacity-40 hover:opacity-100 transition-all duration-300 hover:scale-125 bg-slate-200/40 hover:bg-slate-200/80 p-1 px-2 rounded border border-slate-300/50 shadow-sm"
-        title="Constante Pi - Easter Egg"
+        className="fixed bottom-4 left-4 z-[100] font-mono text-sm font-bold text-slate-600 hover:text-red-600 cursor-pointer select-none bg-white/95 hover:bg-slate-900 hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-300 hover:border-red-500 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-110 flex items-center gap-1.5 group"
+        title="π (Easter Egg) - Haz clic para activar"
+        aria-label="Easter Egg Pi"
       >
-        π
-      </div>
+        <span className="text-base text-indigo-600 group-hover:text-red-400 transition-colors">π</span>
+        <span className="text-[10px] text-slate-400 group-hover:text-red-300 font-mono tracking-tighter hidden sm:inline">3.1416</span>
+      </button>
 
       {/* Sticky header controls */}
       <Header activeSection={activeSection} setActiveSection={setActiveSection} />
@@ -154,8 +157,16 @@ export default function App() {
           </div>
 
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-[11px] text-slate-500">
-            <p>
-              © {new Date().getFullYear()} Erick Radaí Rojas Maldonado. Todos los derechos reservados.
+            <p className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsHackOpen(true)}
+                className="text-slate-500 hover:text-red-400 font-mono text-xs transition px-1 py-0.5 rounded hover:bg-slate-800 cursor-pointer"
+                title="Constante π - Easter Egg"
+              >
+                π
+              </button>
+              <span>© {new Date().getFullYear()} Erick Radaí Rojas Maldonado. Todos los derechos reservados.</span>
             </p>
             <p className="flex items-center gap-1 select-none text-slate-600">
               <GraduationCap className="h-3.5 w-3.5" /> Universidad Michoacana de San Nicolás de Hidalgo — Morelia, Mich. México.
