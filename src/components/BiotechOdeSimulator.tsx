@@ -36,6 +36,20 @@ export const ARTICLE_TABLE2_PARAMS: BiotechParams = {
   delta: 0.80,     // día⁻¹ Tasa de aclaramiento/vaciado de leche (según Tabla 2)
 };
 
+// Parámetros Didácticos Alternativos — Escala de tiempo en HORAS:
+export const DIDACTIC_PARAMS: BiotechParams = {
+  Vin: 0.80,       // mM/h
+  I: 1.0,          // Insulina basal
+  KI: 1.0,         // Constante de afinidad
+  SI: 1.0,         // Sensibilidad normal
+  k1: 0.15,        // Consumo mitocondrial de glucosa
+  k0: 0.05,        // Consumo basal no dependiente de mitocondrias
+  alpha: 0.40,     // h⁻¹ Biogénesis mitocondrial
+  gamma: 0.30,     // h⁻¹ Recambio/mitofagia
+  kL: 0.50,        // Eficiencia de síntesis láctea
+  delta: 0.25,     // h⁻¹ Aclaramiento de leche
+};
+
 // Configuración canónica por defecto en Días:
 const DEFAULT_PARAMS: BiotechParams = ARTICLE_TABLE2_PARAMS;
 
@@ -50,10 +64,17 @@ interface Preset {
 const PRESETS: Preset[] = [
   {
     id: 'table2_article',
-    name: 'Tabla 2 Canónica (Artículo Meng et al.)',
-    badge: 'Tabla 2 (14 días)',
-    description: 'Valores canónicos de la Tabla 2 del artículo: V_in = 2.0 mM/día, α = 0.20, γ = 0.10, k_L = 1.00, δ = 0.80 en escala de 14 días postparto.',
+    name: 'Parámetros Canónicos Didácticos (Inspirado en Meng et al.)',
+    badge: 'Modelo EDO (14 días)',
+    description: 'Modelo didáctico de EDOs calibrado a partir de la evidencia biológica de Meng et al. (Tabla 2): V_in = 2.0 mM/día, α = 0.20, γ = 0.10, k_L = 1.00, δ = 0.80 en escala de 14 días postparto.',
     params: { ...ARTICLE_TABLE2_PARAMS }
+  },
+  {
+    id: 'didactic_hours',
+    name: 'Escala Didáctica Alternativa (48 horas)',
+    badge: 'Didáctico (48 h)',
+    description: 'Parámetros didácticos en escala horaria rápida (V_in = 0.80 mM/h, α = 0.40 h⁻¹, γ = 0.30 h⁻¹).',
+    params: { ...DIDACTIC_PARAMS }
   },
   {
     id: 'normal',
@@ -394,8 +415,8 @@ const EXAM_EXERCISES: ExamExercise[] = [
   },
   {
     id: 'ex3',
-    title: 'Ejercicio Tipo Examen 3: Calibración Fisiológica en Días (Tabla 2 de Meng et al., JCI)',
-    context: 'En el estudio de Meng et al. (JCI), la dinámica de lactogénesis II se monitorea a lo largo de 14 días con los parámetros canónicos de la Tabla 2: V_in = 2.0 mM/día, α = 0.20 día⁻¹, γ = 0.10 día⁻¹, k_L = 1.00, δ = 0.80 día⁻¹, I = 1.0, K_I = 1.0, k_1 = 0.35 y k_0 = 0.15. Compare el estado normosensible (S_I = 1.0) frente a resistencia severa (S_I = 0.10).',
+    title: 'Ejercicio Tipo Examen 3: Calibración Fisiológica en Días (Modelo EDO Inspirado en Meng et al.)',
+    context: 'A partir de la evidencia biológica y bioenergética de Meng et al. (JCI), este modelo didáctico de 3 EDOs simula la dinámica de la lactogénesis II en un horizonte de 14 días postparto con los parámetros canónicos: V_in = 2.0 mM/día, α = 0.20 día⁻¹, γ = 0.10 día⁻¹, k_L = 1.00, δ = 0.80 día⁻¹, I = 1.0, K_I = 1.0, k_1 = 0.35 y k_0 = 0.15. Compare el estado normosensible (S_I = 1.0) frente a resistencia severa (S_I = 0.10).',
     question: 'Calcule analíticamente el punto de equilibrio en días para ambos casos y determine el impacto relativo sobre la síntesis láctea en un horizonte de dos semanas postparto.',
     steps: [
       {
@@ -414,7 +435,7 @@ const EXAM_EXERCISES: ExamExercise[] = [
         explanation: 'El rendimiento lácteo cae de 9.66 UA a 6.63 UA (rendimiento residual del 68.6%, es decir, una pérdida neta del 31.4%).'
       }
     ],
-    conclusion: 'Conclusión Analítica y Fisiológica: Al emplear las unidades en días del artículo Meng et al. (Tabla 2), el horizonte de 14 días captura la transición desde el calostro inicial hasta la lactogénesis de volumen pleno. La resistencia insulínica severa (S_I = 0.10) priva a la mitocondria mamaria de la tasa de renovación necesaria (γ = 0.10 día⁻¹), limitando la producción energética celular requerida para sostener la lactogénesis II.'
+    conclusion: 'Conclusión Analítica y Fisiológica: Al emplear este modelo didáctico de 3 EDOs inspirado en la evidencia empírica de Meng et al., el horizonte de 14 días captura la transición desde el calostro inicial hasta la lactogénesis de volumen pleno. La resistencia insulínica severa (S_I = 0.10) priva a la mitocondria mamaria de la tasa de renovación necesaria (γ = 0.10 día⁻¹), limitando la producción energética celular requerida para sostener la lactogénesis II.'
   }
 ];
 
@@ -424,14 +445,19 @@ export default function BiotechOdeSimulator() {
   const [params, setParams] = useState<BiotechParams>(DEFAULT_PARAMS);
   const [selectedPreset, setSelectedPreset] = useState<string>('table2_article');
   
-  // Escala Temporal Canónica del Artículo Meng et al. (JCI): 14 días postparto con Δt = 0.05 días
-  const tMax = 14;
-  const hStep = 0.05;
-  const timeTicks = [0, 2, 4, 6, 8, 10, 12, 14];
-  const timeLabel = 'días';
-  const timeSuffix = 'd';
-  const rateLabel = 'mM/día';
-  const decayLabel = 'día⁻¹';
+  // Escala Temporal: 'days' (14 días postparto, Δt = 0.05 d) u 'hours' (48 h, Δt = 0.2 h)
+  const [timeUnit, setTimeUnit] = useState<'days' | 'hours'>('days');
+  const [tMax, setTMax] = useState<number>(14);
+  const [hStep, setHStep] = useState<number>(0.05);
+
+  const timeTicks = useMemo(() => {
+    return timeUnit === 'days' ? [0, 2, 4, 6, 8, 10, 12, 14] : [0, 6, 12, 18, 24, 30, 36, 42, 48];
+  }, [timeUnit]);
+
+  const timeLabel = timeUnit === 'days' ? 'días' : 'horas';
+  const timeSuffix = timeUnit === 'days' ? 'd' : 'h';
+  const rateLabel = timeUnit === 'days' ? 'mM/día' : 'mM/h';
+  const decayLabel = timeUnit === 'days' ? 'día⁻¹' : 'h⁻¹';
 
   // S_I range extension toggle (default false: canonical [0.1, 1.0], true: extended [0.1, 2.0])
   const [allowExtendedSI, setAllowExtendedSI] = useState<boolean>(false);
@@ -459,18 +485,48 @@ export default function BiotechOdeSimulator() {
   // Hover on SVG timeline
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
-  // --- Run simulations for both Active Params and Reference Control (14 days, dt = 0.05d) ---
-  const activeTrajectory = useMemo(() => {
-    return solveRK4(params, { G: initialG, M: initialM, L: initialL }, tMax, hStep);
-  }, [params, initialG, initialM, initialL]);
+  // Item 2: Reset button handler que restablece también la escala temporal
+  const handleReset = () => {
+    setTimeUnit('days');
+    setTMax(14);
+    setHStep(0.05);
+    setParams({ ...ARTICLE_TABLE2_PARAMS });
+    setSelectedPreset('table2_article');
+  };
+
+  // Item 6: Mapeo correcto en handleLoadDidactic (evita resaltar incorrectamente el preset de días)
+  const handleLoadDidactic = () => {
+    setTimeUnit('hours');
+    setTMax(48);
+    setHStep(0.2);
+    setParams({ ...DIDACTIC_PARAMS });
+    setSelectedPreset('didactic_hours');
+  };
+
+  const handleLoadCanonicalDays = () => {
+    setTimeUnit('days');
+    setTMax(14);
+    setHStep(0.05);
+    setParams({ ...ARTICLE_TABLE2_PARAMS });
+    setSelectedPreset('table2_article');
+  };
+
+  // Item 3: Calibrar la trayectoria de control de referencia (controlTrajectory) según la unidad de tiempo activa
+  const controlReferenceParams = useMemo(() => {
+    return timeUnit === 'days' ? ARTICLE_TABLE2_PARAMS : DIDACTIC_PARAMS;
+  }, [timeUnit]);
 
   const controlTrajectory = useMemo(() => {
-    return solveRK4(DEFAULT_PARAMS, { G: initialG, M: initialM, L: initialL }, tMax, hStep);
-  }, [initialG, initialM, initialL]);
+    return solveRK4(controlReferenceParams, { G: initialG, M: initialM, L: initialL }, tMax, hStep);
+  }, [controlReferenceParams, initialG, initialM, initialL, tMax, hStep]);
+
+  const activeTrajectory = useMemo(() => {
+    return solveRK4(params, { G: initialG, M: initialM, L: initialL }, tMax, hStep);
+  }, [params, initialG, initialM, initialL, tMax, hStep]);
 
   // Equilibrium & Jacobian for current params
   const equilibrium = useMemo(() => calculateEquilibrium(params), [params]);
-  const controlEquilibrium = useMemo(() => calculateEquilibrium(DEFAULT_PARAMS), []);
+  const controlEquilibrium = useMemo(() => calculateEquilibrium(controlReferenceParams), [controlReferenceParams]);
   const jacobian = useMemo(() => calculateJacobian(params, equilibrium.Geq, equilibrium.Meq), [params, equilibrium]);
 
   // Relative milk yield efficiency compared to healthy control
@@ -479,10 +535,33 @@ export default function BiotechOdeSimulator() {
     return Math.round((equilibrium.Leq / controlEquilibrium.Leq) * 100);
   }, [equilibrium.Leq, controlEquilibrium.Leq]);
 
+  // Item 4: Reducción porcentual calculada dinámicamente mediante calculateEquilibrium
+  const reductionL = useMemo(() => {
+    if (controlEquilibrium.Leq === 0) return 0;
+    return ((controlEquilibrium.Leq - equilibrium.Leq) / controlEquilibrium.Leq) * 100;
+  }, [controlEquilibrium.Leq, equilibrium.Leq]);
+
+  const reductionJin = useMemo(() => {
+    if (controlEquilibrium.Jin === 0) return 0;
+    return ((controlEquilibrium.Jin - equilibrium.Jin) / controlEquilibrium.Jin) * 100;
+  }, [controlEquilibrium.Jin, equilibrium.Jin]);
+
   // Handle Preset selection
   const handleApplyPreset = (preset: Preset) => {
     setSelectedPreset(preset.id);
-    setParams(prev => ({ ...prev, ...preset.params }));
+    if (preset.id === 'table2_article') {
+      setTimeUnit('days');
+      setTMax(14);
+      setHStep(0.05);
+      setParams({ ...ARTICLE_TABLE2_PARAMS });
+    } else if (preset.id === 'didactic_hours') {
+      setTimeUnit('hours');
+      setTMax(48);
+      setHStep(0.2);
+      setParams({ ...DIDACTIC_PARAMS });
+    } else {
+      setParams(prev => ({ ...prev, ...preset.params }));
+    }
   };
 
   // Assistant Command Execution
@@ -743,19 +822,36 @@ export default function BiotechOdeSimulator() {
         </div>
       </div>
 
-      {/* ================= CANONICAL 14-DAYS HORIZON BANNER ================= */}
+      {/* ================= TIME SCALE SELECTION BANNER ================= */}
       <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 sm:p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 text-xs font-sans">
         <div className="flex flex-wrap items-center gap-2.5">
           <span className="text-slate-700 font-semibold font-mono text-[11px] flex items-center gap-1.5">
-            <Activity className="h-3.5 w-3.5 text-indigo-600" /> Escala Temporal Canónica:
+            <Activity className="h-3.5 w-3.5 text-indigo-600" /> Escala Temporal Activa:
           </span>
-          <span className="px-3 py-1 bg-white rounded-xl border border-slate-300 font-mono text-xs font-bold text-indigo-950 shadow-2xs flex items-center gap-1.5">
-            <span>14 Días postparto</span>
-            <span className="text-[10px] text-indigo-700 font-semibold font-mono bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">Δt = 0.05 d (280 pasos RK4)</span>
-          </span>
-          <span className="text-[11px] text-slate-500 font-sans hidden sm:inline">
-            Calibración fisiológica de la Tabla 2 de Meng et al. (JCI).
-          </span>
+          <div className="inline-flex rounded-xl bg-slate-200/80 p-1 border border-slate-300">
+            <button
+              onClick={handleLoadCanonicalDays}
+              className={`px-3 py-1 rounded-lg font-mono text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                timeUnit === 'days'
+                  ? 'bg-white text-indigo-950 shadow-xs'
+                  : 'text-slate-600 hover:text-indigo-900'
+              }`}
+            >
+              <span>14 Días (Inspirado en Meng et al.)</span>
+              <span className="text-[10px] text-indigo-700 font-semibold font-mono bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200">Δt = 0.05 d</span>
+            </button>
+            <button
+              onClick={handleLoadDidactic}
+              className={`px-3 py-1 rounded-lg font-mono text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                timeUnit === 'hours'
+                  ? 'bg-white text-indigo-950 shadow-xs'
+                  : 'text-slate-600 hover:text-indigo-900'
+              }`}
+            >
+              <span>48 Horas (Escala Didáctica)</span>
+              <span className="text-[10px] text-indigo-700 font-semibold font-mono bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-200">Δt = 0.2 h</span>
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -855,9 +951,9 @@ export default function BiotechOdeSimulator() {
               </h4>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setParams(DEFAULT_PARAMS)}
-                  className="text-[11px] text-slate-500 hover:text-indigo-600 flex items-center gap-1 font-mono transition"
-                  title="Reiniciar a valores canónicos"
+                  onClick={handleReset}
+                  className="text-[11px] text-slate-500 hover:text-indigo-600 flex items-center gap-1 font-mono transition cursor-pointer"
+                  title="Reiniciar a escala y valores canónicos"
                 >
                   <RotateCcw className="h-3 w-3" /> Reset
                 </button>
@@ -1232,7 +1328,7 @@ export default function BiotechOdeSimulator() {
                 <div className="p-3 bg-white border border-slate-250 rounded-xl space-y-1">
                   <strong className="text-amber-900 block font-mono text-[11px]">3. Rendimiento de Lactogénesis</strong>
                   <p className="text-[11px] text-slate-600 leading-relaxed">
-                    La producción L(t) requiere tanto carbono (G) como ATP (M). Debido a la no linealidad, una caída del 25% en la captación produce un derrumbe cercano al 30-40% en la tasa de síntesis láctea.
+                    La producción L(t) requiere tanto carbono (G) como ATP (M). Debido al acoplamiento no lineal bilineal, una variación de {reductionJin >= 0 ? `reducción del ${reductionJin.toFixed(1)}%` : `incremento del ${Math.abs(reductionJin).toFixed(1)}%`} en la captación J_in genera una {reductionL >= 0 ? `reducción neta del ${reductionL.toFixed(1)}%` : `ganancia del ${Math.abs(reductionL).toFixed(1)}%`} en el estado estacionario L_eq ({equilibrium.Leq.toFixed(2)} vs. {controlEquilibrium.Leq.toFixed(2)} UA).
                   </p>
                 </div>
               </div>
