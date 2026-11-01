@@ -9,11 +9,11 @@ import {
 
 // ==================== INTERFACES & PRESETS ====================
 
-interface BiotechParams {
-  Vin: number;     // Basal transport capacity (mM/h)
+export interface BiotechParams {
+  Vin: number;     // Basal transport capacity (mM/time)
   I: number;       // Insulin concentration (relative or nM)
   KI: number;      // Affinity constant for insulin
-  SI: number;      // Insulin sensitivity index (1.0 = normal, 0.15 = severe resistance)
+  SI: number;      // Insulin sensitivity index (rango canónico del artículo: 0.1 a 1.0)
   k1: number;      // Mitochondrial glucose consumption rate
   k0: number;      // Basal non-mitochondrial consumption
   alpha: number;   // Mitochondrial biogenesis rate
@@ -22,62 +22,89 @@ interface BiotechParams {
   delta: number;   // Milk clearance / secretion rate
 }
 
-const DEFAULT_PARAMS: BiotechParams = {
-  Vin: 0.8,
+// Parámetros Canónicos de la Tabla 2 de Meng et al. (JCI) — Escala de tiempo en DÍAS:
+export const ARTICLE_TABLE2_PARAMS: BiotechParams = {
+  Vin: 2.0,        // mM/día (según Tabla 2 del artículo)
+  I: 1.0,          // Insulina relativa normalizada
+  KI: 1.0,         // Constante de afinidad de insulina
+  SI: 1.0,         // Sensibilidad normal (rango canónico [0.1, 1.0])
+  k1: 0.35,        // Tasa de consumo mitocondrial de glucosa
+  k0: 0.15,        // Consumo basal no dependiente de mitocondrias
+  alpha: 0.20,     // día⁻¹ (según Tabla 2 del artículo)
+  gamma: 0.10,     // día⁻¹ (según Tabla 2 del artículo)
+  kL: 1.00,        // Eficiencia de síntesis láctea (según Tabla 2)
+  delta: 0.80,     // día⁻¹ Tasa de aclaramiento/vaciado de leche (según Tabla 2)
+};
+
+// Parámetros Didácticos Acelerados del Simulador — Escala de tiempo en HORAS:
+export const DIDACTIC_PARAMS: BiotechParams = {
+  Vin: 0.80,       // mM/h (equivale a 19.2 mM/día)
   I: 1.0,
   KI: 1.0,
   SI: 1.0,
   k1: 0.35,
   k0: 0.15,
-  alpha: 0.40,
-  gamma: 0.30,
+  alpha: 0.40,     // h⁻¹ (equivale a 9.60 día⁻¹)
+  gamma: 0.30,     // h⁻¹ (equivale a 7.20 día⁻¹)
   kL: 0.50,
-  delta: 0.25,
+  delta: 0.25,     // h⁻¹ (equivale a 6.00 día⁻¹)
 };
+
+// Por defecto usamos los valores canónicos del artículo en Días:
+const DEFAULT_PARAMS: BiotechParams = ARTICLE_TABLE2_PARAMS;
 
 interface Preset {
   id: string;
   name: string;
   badge: string;
   description: string;
+  timeUnit?: 'days' | 'hours';
   params: Partial<BiotechParams>;
 }
 
 const PRESETS: Preset[] = [
   {
+    id: 'table2_article',
+    name: 'Tabla 2 Canónica (Artículo Meng et al.)',
+    badge: 'Tabla 2 (14 días)',
+    description: 'Valores canónicos de la Tabla 2 del artículo: V_in = 2.0 mM/día, α = 0.20, γ = 0.10, k_L = 1.00, δ = 0.80 en escala de 14 días.',
+    timeUnit: 'days',
+    params: { ...ARTICLE_TABLE2_PARAMS }
+  },
+  {
     id: 'normal',
     name: 'Fisiología Control (Saludable)',
-    badge: 'Normosensible',
+    badge: 'Normosensible (S_I = 1.0)',
     description: 'Sensibilidad óptima a la insulina (S_I = 1.0). Transporte eficiente de glucosa y capacidad mitocondrial robusta.',
-    params: { SI: 1.0, I: 1.0, alpha: 0.40, gamma: 0.30 }
+    params: { SI: 1.0, I: 1.0 }
   },
   {
     id: 'mild_ir',
     name: 'Resistencia a la Insulina Leve',
     badge: 'S_I = 0.50',
     description: 'Disminución moderada de la activación de GLUT dependiente de insulina en el epitelio mamario.',
-    params: { SI: 0.5, I: 1.2, alpha: 0.38, gamma: 0.30 }
+    params: { SI: 0.50, I: 1.2 }
   },
   {
     id: 'severe_ir',
-    name: 'Resistencia Severa (Meng et al.)',
-    badge: 'S_I = 0.15',
-    description: 'Caída drástica en la captación de glucosa celular y síntesis láctea (lactogénesis II comprometida).',
-    params: { SI: 0.15, I: 1.5, alpha: 0.30, gamma: 0.35 }
+    name: 'Resistencia severa (escenario didáctico)',
+    badge: 'S_I = 0.10',
+    description: 'Caída drástica en la captación de glucosa celular y síntesis láctea (lactogénesis II comprometida). Escenario didáctico basado en los hallazgos de Meng et al.',
+    params: { SI: 0.10, I: 1.5 }
   },
   {
     id: 'hyperinsulinemia',
     name: 'Hiperinsulinemia Compensatoria',
     badge: 'I = 3.0 / S_I = 0.35',
     description: 'Elevada secreción pancreática compensatoria intentando superar el defecto del receptor mamario.',
-    params: { SI: 0.35, I: 3.0, alpha: 0.35, gamma: 0.32 }
+    params: { SI: 0.35, I: 3.0 }
   },
   {
     id: 'mitochondrial_dysfunction',
     name: 'Disfunción Mitocondrial Primaria',
     badge: 'α baja / γ alta',
     description: 'Mitofagia acelerada y menor biogénesis. Falla bioenergética mitocondrial independiente del transportador.',
-    params: { SI: 0.9, I: 1.0, alpha: 0.18, gamma: 0.48 }
+    params: { SI: 0.90, I: 1.0, alpha: 0.10, gamma: 0.22 }
   }
 ];
 
@@ -93,8 +120,8 @@ interface SimulationPoint {
 function solveRK4(
   params: BiotechParams, 
   initialState: { G: number; M: number; L: number }, 
-  tMax: number = 48, 
-  h: number = 0.2
+  tMax: number = 14, 
+  h: number = 0.05
 ): SimulationPoint[] {
   const points: SimulationPoint[] = [];
   let t = 0;
@@ -222,56 +249,66 @@ function calculateJacobian(p: BiotechParams, Geq: number, Meq: number) {
 
 // ==================== PYTHON SCRIPT GENERATOR ====================
 
-function generatePythonCode(p: BiotechParams): string {
+function generatePythonCode(p: BiotechParams, timeUnit: 'days' | 'hours' = 'days', tMax: number = 14): string {
+  const isDays = timeUnit === 'days';
+  const timeUnitStr = isDays ? 'días' : 'horas';
+  const rateUnitStr = isDays ? 'mM/día' : 'mM/h';
+  const decayUnitStr = isDays ? 'día⁻¹' : 'h⁻¹';
+  const nPoints = isDays ? 280 : 240;
+
   return `# =====================================================================
 # SIMULACIÓN DE DINÁMICA DE LACTOGÉNESIS (MENG ET AL., JCI)
-# Estudio de Referencia: Meng et al., Journal of Clinical Investigation
+# Estudio Experimental: Meng et al., Journal of Clinical Investigation
 # DOI: https://doi.org/10.1172/JCI197311
-# Modelo de 3 EDOs no lineales con Resistencia a la Insulina y Mitocondria
-# Generado por el Asistente Didáctico de Modelado Matemático en Biotecnología
+# "Insulin resistance is associated with mammary mitochondrial dysfunction at the onset of human lactation"
+# Modelo didáctico de 3 EDOs en Biología de Sistemas
 # =====================================================================
 
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 
-# --- 1. Parámetros Cinéticos y Fisiológicos ---
-Vin = ${p.Vin}      # Capacidad basal de transporte (mM/h)
-I = ${p.I}        # Concentración de insulina extracelular
+# --- 1. Parámetros Cinéticos y Fisiológicos (${timeUnitStr.toUpperCase()}) ---
+Vin = ${p.Vin}      # Capacidad basal de transporte (${rateUnitStr})
+I = ${p.I}        # Concentración de insulina extracelular (relativa)
 KI = ${p.KI}       # Constante de saturación / afinidad
 k1 = ${p.k1}       # Tasa de consumo mitocondrial de glucosa
 k0 = ${p.k0}       # Pérdida basal no mitocondrial
-alpha = ${p.alpha}    # Tasa de biogénesis mitocondrial
-gamma = ${p.gamma}    # Tasa de recambio mitocondrial (mitofagia)
+alpha = ${p.alpha}    # Tasa de biogénesis mitocondrial (${decayUnitStr})
+gamma = ${p.gamma}    # Tasa de recambio mitocondrial / mitofagia (${decayUnitStr})
 kL = ${p.kL}       # Eficiencia de síntesis de leche
-delta = ${p.delta}    # Tasa de secreción / eliminación de leche
+delta = ${p.delta}    # Tasa de aclaramiento / secreción de leche (${decayUnitStr})
 
-# Escenarios de Sensibilidad a la Insulina (S_I)
+# Escenarios de Sensibilidad a la Insulina (S_I en rango canónico [0.1, 1.0])
 scenarios = {
     "Control Normosensible (S_I = 1.00)": 1.00,
     "Resistencia Leve (S_I = 0.50)": 0.50,
-    "Resistencia Severa (S_I = 0.15)": 0.15,
+    "Resistencia Severa (Escenario didáctico, S_I = 0.10)": 0.10,
     "Configuración Activa (S_I = ${p.SI})": ${p.SI}
 }
 
-# --- 2. Definición del Sistema de EDOs ---
+# --- 2. Sistema de 3 Ecuaciones Diferenciales Ordinarias ---
 def lactogenesis_ode(t, y, SI):
     G, M, L = y
     
-    # Flujo de entrada mediado por GLUT dependiente de insulina
+    # Flujo de entrada de glucosa dependiente de GLUT e insulina
     Jin = Vin * (1.0 + (SI * I) / (KI + I))
     
-    # Ecuaciones diferenciales ordinarias de Meng et al.
+    # 1. dG/dt: Dinámica de Glucosa Mamaria
     dG_dt = Jin - k1 * G * M - k0 * G
+    
+    # 2. dM/dt: Capacidad Mitocondrial Funcional
     dM_dt = alpha * G - gamma * M
+    
+    # 3. dL/dt: Tasa de Producción y Secreción de Leche
     dL_dt = kL * G * M - delta * L
     
     return [dG_dt, dM_dt, dL_dt]
 
-# --- 3. Condiciones Iniciales y Malla Temporal ---
-t_span = (0, 48)  # 48 horas de seguimiento tras el parto
-t_eval = np.linspace(0, 48, 500)
-y0 = [0.5, 0.8, 0.2]  # [G0, M0, L0] al inicio de la fase secretora
+# --- 3. Condiciones Iniciales y Malla Temporal (${timeUnitStr}) ---
+t_span = (0, ${tMax})  # Horizonte de seguimiento postparto
+t_eval = np.linspace(0, ${tMax}, ${nPoints})
+y0 = [0.5, 0.8, 0.2]  # [G0 (mM), M0 (funcional), L0 (UA)] al inicio de la fase secretora
 
 # --- 4. Integración Numérica (Runge-Kutta orden 4/5 RK45) ---
 plt.figure(figsize=(14, 8))
@@ -280,9 +317,9 @@ for label, SI_val in scenarios.items():
     sol = solve_ivp(lactogenesis_ode, t_span, y0, t_eval=t_eval, args=(SI_val,), method='RK45')
     plt.plot(sol.t, sol.y[2], lw=2.2, label=f"{label} -> L_final = {sol.y[2][-1]:.2f}")
 
-plt.title("Dinámica de Producción de Leche L(t) bajo Resistencia a la Insulina", fontsize=14, fontweight='bold')
-plt.xlabel("Tiempo postparto t (horas)", fontsize=12)
-plt.ylabel("Producción de Leche L(t) [Unidades Arbitrarias]", fontsize=12)
+plt.title("Dinámica de Producción de Leche L(t) bajo Resistencia a la Insulina\\n(Basado en Meng et al., JCI / Modelo didáctico)", fontsize=13, fontweight='bold')
+plt.xlabel("Tiempo postparto t (${timeUnitStr})", fontsize=11)
+plt.ylabel("Producción de Leche L(t) [Unidades Arbitrarias]", fontsize=11)
 plt.grid(True, linestyle='--', alpha=0.6)
 plt.legend(frameon=True, facecolor='white', loc='lower right')
 plt.tight_layout()
@@ -296,7 +333,7 @@ def analytical_steady_state(SI_val):
     c = -Jin
     G_eq = (-b + np.sqrt(b**2 - 4 * a * c)) / (2 * a)
     M_eq = (alpha / gamma) * G_eq
-    L_eq = (kL / delta) * G_eq * M_eq
+    L_eq = (kL / delta) * G_eq * Meq
     return G_eq, M_eq, L_eq
 
 print("=== PUNTOS DE EQUILIBRIO ANALÍTICOS ===")
@@ -370,6 +407,30 @@ const EXAM_EXERCISES: ExamExercise[] = [
       }
     ],
     conclusion: 'Conclusión Analítica y de Estabilidad: Al ser Tr < 0 y Det > 0, el polinomio característico cuadrático satisface idénticamente el criterio de Routh-Hurwitz. Por ende, los tres autovalores poseen Re(λ_i) < 0. El punto de equilibrio es un sumidero localmente asintóticamente estable (nodo o foco estable), garantizando que cualquier fluctuación transitoria en el aporte de nutrientes se disipa sin oscilaciones caóticas.'
+  },
+  {
+    id: 'ex3',
+    title: 'Ejercicio Tipo Examen 3: Calibración Fisiológica en Días (Tabla 2 de Meng et al., JCI)',
+    context: 'En el estudio de Meng et al. (JCI), la dinámica de lactogénesis II se monitorea a lo largo de 14 días con los parámetros canónicos de la Tabla 2: V_in = 2.0 mM/día, α = 0.20 día⁻¹, γ = 0.10 día⁻¹, k_L = 1.00, δ = 0.80 día⁻¹, I = 1.0, K_I = 1.0, k_1 = 0.35 y k_0 = 0.15. Compare el estado normosensible (S_I = 1.0) frente a resistencia severa (S_I = 0.10).',
+    question: 'Calcule analíticamente el punto de equilibrio en días para ambos casos y determine el impacto relativo sobre la síntesis láctea en un horizonte de dos semanas postparto.',
+    steps: [
+      {
+        title: 'Paso 1: Flujo de entrada de glucosa diario',
+        math: 'J_{in}^{ctrl} = 2.0 \\left(1 + \\frac{1.0 \\cdot 1.0}{1.0 + 1.0}\\right) = 2.0(1.5) = 3.000 \\text{ mM/día}\\\\ J_{in}^{res} = 2.0 \\left(1 + \\frac{0.10 \\cdot 1.0}{1.0 + 1.0}\\right) = 2.0(1.05) = 2.100 \\text{ mM/día}',
+        explanation: 'En escala de días, el flujo de entrada pasa de 3.0 mM/día a 2.1 mM/día en resistencia severa (caída del 30% en aporte de carbono celular).'
+      },
+      {
+        title: 'Paso 2: Relación mitocondrial y polinomio cuadrático',
+        math: 'M_{eq} = \\frac{\\alpha}{\\gamma} G_{eq} = \\frac{0.20}{0.10} G_{eq} = 2.000 \\cdot G_{eq}\\\\ a = \\frac{k_1 \\alpha}{\\gamma} = 0.35(2.0) = 0.700, \\quad b = k_0 = 0.150\\\\ 0.700 G_{eq}^2 + 0.150 G_{eq} - J_{in} = 0',
+        explanation: 'Bajo los parámetros de la Tabla 2, la biomasa mitocondrial funcional mantiene una relación 2:1 con la concentración de glucosa intramamaria.'
+      },
+      {
+        title: 'Paso 3: Concentraciones estacionarias y rendimiento lácteo',
+        math: 'G_{eq}^{ctrl} = \\frac{-0.15 + \\sqrt{0.15^2 + 4(0.70)(3.0)}}{1.40} \\approx 1.966 \\text{ mM} \\implies L_{eq}^{ctrl} = \\frac{1.00}{0.80}(1.966)(3.932) \\approx 9.66 \\text{ UA}\\\\ G_{eq}^{res} = \\frac{-0.15 + \\sqrt{0.15^2 + 4(0.70)(2.1)}}{1.40} \\approx 1.628 \\text{ mM} \\implies L_{eq}^{res} = \\frac{1.00}{0.80}(1.628)(3.256) \\approx 6.63 \\text{ UA}',
+        explanation: 'El rendimiento lácteo cae de 9.66 UA a 6.63 UA (rendimiento residual del 68.6%, es decir, una pérdida neta del 31.4%).'
+      }
+    ],
+    conclusion: 'Conclusión Analítica y Fisiológica: Al emplear las unidades en días del artículo Meng et al. (Tabla 2), el horizonte de 14 días captura la transición desde el calostro inicial hasta la lactogénesis de volumen pleno. La resistencia insulínica severa (S_I = 0.10) priva a la mitocondria mamaria de la tasa de renovación necesaria (γ = 0.10 día⁻¹), limitando la producción energética celular requerida para sostener la lactogénesis II.'
   }
 ];
 
@@ -377,9 +438,19 @@ const EXAM_EXERCISES: ExamExercise[] = [
 
 export default function BiotechOdeSimulator() {
   const [params, setParams] = useState<BiotechParams>(DEFAULT_PARAMS);
-  const [selectedPreset, setSelectedPreset] = useState<string>('normal');
-  const [tMax, setTMax] = useState<number>(48);
-  const [hStep, setHStep] = useState<number>(0.2);
+  const [selectedPreset, setSelectedPreset] = useState<string>('table2_article');
+  
+  // Time units & Horizon: 'days' (14 days, dt = 0.05d) or 'hours' (48h, dt = 0.2h)
+  const [timeUnit, setTimeUnit] = useState<'days' | 'hours'>('days');
+  const [tMax, setTMax] = useState<number>(14);
+  const [hStep, setHStep] = useState<number>(0.05);
+
+  // S_I range extension toggle (default false: canonical [0.1, 1.0], true: extended [0.1, 2.0])
+  const [allowExtendedSI, setAllowExtendedSI] = useState<boolean>(false);
+
+  // Parameter comparison table drawer toggle
+  const [showComparisonTable, setShowComparisonTable] = useState<boolean>(false);
+
   const [initialG, setInitialG] = useState<number>(0.5);
   const [initialM, setInitialM] = useState<number>(0.8);
   const [initialL, setInitialL] = useState<number>(0.2);
@@ -402,6 +473,32 @@ export default function BiotechOdeSimulator() {
 
   // Hover on SVG timeline
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+
+  // Helper to switch time unit cleanly
+  const handleSetTimeUnit = (unit: 'days' | 'hours') => {
+    setTimeUnit(unit);
+    if (unit === 'days') {
+      setTMax(14);
+      setHStep(0.05);
+    } else {
+      setTMax(48);
+      setHStep(0.2);
+    }
+  };
+
+  // Helper to load Canonical Table 2
+  const handleLoadTable2 = () => {
+    handleSetTimeUnit('days');
+    setParams({ ...ARTICLE_TABLE2_PARAMS });
+    setSelectedPreset('table2_article');
+  };
+
+  // Helper to load Didactic hours values
+  const handleLoadDidactic = () => {
+    handleSetTimeUnit('hours');
+    setParams({ ...DIDACTIC_PARAMS });
+    setSelectedPreset('normal');
+  };
 
   // --- Run simulations for both Active Params and Reference Control ---
   const activeTrajectory = useMemo(() => {
@@ -426,8 +523,25 @@ export default function BiotechOdeSimulator() {
   // Handle Preset selection
   const handleApplyPreset = (preset: Preset) => {
     setSelectedPreset(preset.id);
-    setParams({ ...DEFAULT_PARAMS, ...preset.params });
+    if (preset.timeUnit && preset.timeUnit !== timeUnit) {
+      handleSetTimeUnit(preset.timeUnit);
+    }
+    setParams(prev => ({ ...prev, ...preset.params }));
   };
+
+  // Dynamic time ticks for charts
+  const timeTicks = useMemo(() => {
+    if (timeUnit === 'days') {
+      return [0, 2, 4, 6, 8, 10, 12, 14];
+    }
+    return [0, 12, 24, 36, 48];
+  }, [timeUnit]);
+
+  // Dynamic unit strings
+  const timeLabel = timeUnit === 'days' ? 'días' : 'horas';
+  const timeSuffix = timeUnit === 'days' ? 'd' : 'h';
+  const rateLabel = timeUnit === 'days' ? 'mM/día' : 'mM/h';
+  const decayLabel = timeUnit === 'days' ? 'día⁻¹' : 'h⁻¹';
 
   // Assistant Command Execution
   const executeCommand = (cmd: string) => {
@@ -443,13 +557,13 @@ export default function BiotechOdeSimulator() {
     const lower = trimmed.toLowerCase();
 
     if (lower === '/simular') {
-      botResponse = `Aquí tienes el script completo en Python con Scipy (\`solve_ivp\`), configurado con los parámetros activos de tu sesión (${params.SI === 1 ? 'Control Normosensible' : `Resistencia a la Insulina S_I = ${params.SI}`}). El algoritmo integra mediante Runge-Kutta de paso variable (RK45) y genera las curvas comparativas de lactogénesis:`;
-      generatedCode = generatePythonCode(params);
+      botResponse = `Aquí tienes el script completo en Python con Scipy (\`solve_ivp\`), configurado con los parámetros activos de tu sesión (${params.SI === 1 ? 'Control Normosensible' : `Resistencia a la Insulina S_I = ${params.SI}`}) en escala temporal de **${timeLabel}** (horizonte ${tMax} ${timeSuffix}, paso ${hStep} ${timeSuffix}). El algoritmo integra mediante Runge-Kutta de paso variable (RK45) y genera las curvas comparativas de lactogénesis:`;
+      generatedCode = generatePythonCode(params, timeUnit, tMax);
       setActiveSubTab('assistant');
     } else if (lower === '/equilibrio') {
-      botResponse = `### Cálculo Analítico del Punto de Equilibrio (G_eq, M_eq, L_eq)\n\n` +
+      botResponse = `### Cálculo Analítico del Punto de Equilibrio (G_eq, M_eq, L_eq) [Escala: ${timeLabel}]\n\n` +
         `**1. Flujo de transporte de glucosa GLUT:**\n` +
-        `$$J_{in}(S_I) = V_{in} \\cdot \\left(1 + \\frac{S_I \\cdot I}{K_I + I}\\right) = ${params.Vin.toFixed(2)} \\cdot \\left(1 + \\frac{${params.SI.toFixed(2)} \\cdot ${params.I.toFixed(2)}}{${params.KI.toFixed(2)} + ${params.I.toFixed(2)}}\\right) = ${equilibrium.Jin.toFixed(4)} \\text{ mM/h}$$\n\n` +
+        `$$J_{in}(S_I) = V_{in} \\cdot \\left(1 + \\frac{S_I \\cdot I}{K_I + I}\\right) = ${params.Vin.toFixed(2)} \\cdot \\left(1 + \\frac{${params.SI.toFixed(2)} \\cdot ${params.I.toFixed(2)}}{${params.KI.toFixed(2)} + ${params.I.toFixed(2)}}\\right) = ${equilibrium.Jin.toFixed(4)} \\text{ ${rateLabel}}$$\n\n` +
         `**2. Equilibrio mitocondrial:**\n` +
         `$$\\frac{dM}{dt} = 0 \\implies M_{eq} = \\frac{\\alpha}{\\gamma} G_{eq} = \\frac{${params.alpha.toFixed(2)}}{${params.gamma.toFixed(2)}} G_{eq} = ${(params.alpha / params.gamma).toFixed(4)} \\cdot G_{eq}$$\n\n` +
         `**3. Conservación de masa de Glucosa (Ecuación cuadrática):**\n` +
@@ -462,13 +576,13 @@ export default function BiotechOdeSimulator() {
         `*Conclusión:* Frente al control normal (${controlEquilibrium.Leq.toFixed(2)} UA), este estado entrega un rendimiento relativo del **${relativeEfficiency}%**.`;
       setActiveSubTab('steadyState');
     } else if (lower === '/jacobiana') {
-      botResponse = `### Matriz Jacobiana y Análisis de Estabilidad Asintótica\n\n` +
+      botResponse = `### Matriz Jacobiana y Análisis de Estabilidad Asintótica [Escala: ${timeLabel}]\n\n` +
         `La matriz Jacobiana $J(G, M, L)$ evaluada en el punto de equilibrio es:\n\n` +
         `$$J = \\begin{pmatrix} -k_1 M_{eq} - k_0 & -k_1 G_{eq} & 0 \\\\ \\alpha & -\\gamma & 0 \\\\ k_L M_{eq} & k_L G_{eq} & -\\delta \\end{pmatrix} = ` +
         `\\begin{pmatrix} ${jacobian.matrix[0][0].toFixed(3)} & ${jacobian.matrix[0][1].toFixed(3)} & 0 \\\\ ` +
         `${jacobian.matrix[1][0].toFixed(3)} & ${jacobian.matrix[1][1].toFixed(3)} & 0 \\\\ ` +
         `${jacobian.matrix[2][0].toFixed(3)} & ${jacobian.matrix[2][1].toFixed(3)} & ${jacobian.matrix[2][2].toFixed(3)} \\end{pmatrix}$$\n\n` +
-        `**Autovalores calculados:**\n` +
+        `**Autovalores calculados (${decayLabel}):**\n` +
         `- $\\lambda_1 = ${jacobian.lambda1.real.toFixed(4)} ${jacobian.lambda1.imag !== 0 ? `\\pm ${Math.abs(jacobian.lambda1.imag).toFixed(4)}i` : ''}$\n` +
         `- $\\lambda_2 = ${jacobian.lambda2.real.toFixed(4)} ${jacobian.lambda2.imag !== 0 ? `\\mp ${Math.abs(jacobian.lambda2.imag).toFixed(4)}i` : ''}$\n` +
         `- $\\lambda_3 = -\\delta = ${jacobian.lambda3.real.toFixed(4)}$\n\n` +
@@ -481,8 +595,8 @@ export default function BiotechOdeSimulator() {
     } else {
       // General question answering in professor persona
       botResponse = `Estimado estudiante: analizando tu consulta bajo el prisma de la biología de sistemas y el estudio de Meng et al. (The Journal of Clinical Investigation, DOI: https://doi.org/10.1172/JCI197311):\n\n` +
-        `En este modelo no lineal, la variable clave de control es el índice de sensibilidad $S_I$. Cuando $S_I$ se degrada (resistencia a la insulina), no solamente cae el ingreso de glucosa ($J_{in}$), sino que el acoplamiento no lineal $k_1 \\cdot G \\cdot M$ provoca una desincronización bioenergética. La masa mitocondrial $M(t)$ requiere glucosa como señal trófica y sustrato (término $\\alpha \\cdot G$); si $G(t)$ disminuye, la tasa de recambio mitocondrial $\\gamma \\cdot M$ domina, reduciendo $M$ y por ende derrumbando la síntesis de leche $L(t)$ de forma no lineal.\n\n` +
-        `Puedes consultar el paper original en https://doi.org/10.1172/JCI197311, simular este comportamiento en tiempo real con los controles deslizantes o ejecutar \`/simular\`, \`/equilibrio\`, \`/jacobiana\` o \`/ejercicio\`.`;
+        `En este modelo no lineal, la variable clave de control es el índice de sensibilidad $S_I$ (cuyo rango fisiológico canónico es $0.1$ a $1.0$). Cuando $S_I$ se degrada (resistencia a la insulina), no solamente cae el ingreso de glucosa ($J_{in}$), sino que el acoplamiento no lineal $k_1 \\cdot G \\cdot M$ provoca una desincronización bioenergética. La masa mitocondrial $M(t)$ requiere glucosa como señal trófica y sustrato (término $\\alpha \\cdot G$); si $G(t)$ disminuye, la tasa de recambio mitocondrial $\\gamma \\cdot M$ domina, reduciendo $M$ y por ende derrumbando la síntesis de leche $L(t)$ de forma no lineal.\n\n` +
+        `Recuerda que el estudio de Meng et al. dilucida la causa biológica y experimental, mientras que el modelo de 3 EDOs es la formulación matemática didáctica correspondiente. Puedes alternar entre unidades de tiempo (**días** con horizonte de 14 d según el artículo, u **horas** para respuesta rápida), consultar la tabla de parámetros o ejecutar \`/simular\`, \`/equilibrio\`, \`/jacobiana\` o \`/ejercicio\`.`;
     }
 
     setMessages(prev => [...prev, userMsg, { sender: 'assistant', text: botResponse, code: generatedCode, timestamp: time }]);
@@ -648,14 +762,16 @@ export default function BiotechOdeSimulator() {
       </div>
 
       {/* ================= CLINICAL & BIOTECH PRESETS ================= */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
           <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
             <Sliders className="h-3.5 w-3.5 text-indigo-600" /> Escenarios Clínicos y Biotecnológicos Preconfigurados
           </span>
-          <span className="text-[11px] text-slate-400 font-sans">Seleccione para contrastar</span>
+          <span className="text-[11px] text-slate-500 font-sans italic">
+            *Meng et al. (JCI) es la referencia biológica; los 5 presets y el modelo de 3 EDOs son escenarios didácticos.
+          </span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2.5">
           {PRESETS.map((preset) => (
             <button
               key={preset.id}
@@ -683,6 +799,164 @@ export default function BiotechOdeSimulator() {
           ))}
         </div>
       </div>
+
+      {/* ================= TIME UNIT & PARAMETER COMPARISON TOOLBAR ================= */}
+      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 sm:p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 text-xs font-sans">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-slate-600 font-semibold font-mono text-[11px] flex items-center gap-1.5">
+            <Activity className="h-3.5 w-3.5 text-indigo-600" /> Escala Temporal:
+          </span>
+          <div className="inline-flex p-0.5 bg-white rounded-xl border border-slate-300 shadow-2xs font-mono text-xs">
+            <button
+              onClick={() => handleSetTimeUnit('days')}
+              className={`px-3 py-1 rounded-lg font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                timeUnit === 'days'
+                  ? 'bg-indigo-900 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title="Escala temporal canónica del artículo Meng et al.: horizonte 14 días con Δt = 0.05 días"
+            >
+              <span>Días (14 d, Δt=0.05 d)</span>
+              <span className="text-[10px] opacity-75 font-normal">[Artículo]</span>
+            </button>
+            <button
+              onClick={() => handleSetTimeUnit('hours')}
+              className={`px-3 py-1 rounded-lg font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+                timeUnit === 'hours'
+                  ? 'bg-indigo-900 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title="Escala temporal didáctica acelerada: horizonte 48 horas con Δt = 0.2 h"
+            >
+              <span>Horas (48 h, Δt=0.2 h)</span>
+              <span className="text-[10px] opacity-75 font-normal">[Rápido]</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={handleLoadTable2}
+            className="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 rounded-xl text-indigo-900 font-mono text-[11px] font-semibold transition cursor-pointer shadow-2xs"
+            title="Cargar parámetros de la Tabla 2 de Meng et al.: Vin=2.0 mM/d, alpha=0.20, gamma=0.10, kL=1.00, delta=0.80"
+          >
+            Cargar Tabla 2 (Artículo)
+          </button>
+          <button
+            onClick={handleLoadDidactic}
+            className="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 rounded-xl text-slate-700 font-mono text-[11px] font-semibold transition cursor-pointer shadow-2xs"
+            title="Cargar parámetros didácticos: Vin=0.80 mM/h, alpha=0.40, gamma=0.30, kL=0.50, delta=0.25"
+          >
+            Cargar Didácticos (Horas)
+          </button>
+          <button
+            onClick={() => setShowComparisonTable(!showComparisonTable)}
+            className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-800 rounded-xl text-[11px] font-semibold font-mono flex items-center gap-1.5 transition cursor-pointer"
+          >
+            <BarChart2 className="h-3.5 w-3.5 text-indigo-600" />
+            <span>{showComparisonTable ? 'Ocultar Comparación' : 'Comparar Artículo vs Simulador'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ================= EXPANDABLE PARAMETER COMPARISON DRAWER ================= */}
+      <AnimatePresence>
+        {showComparisonTable && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4"
+          >
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-200 pb-3">
+              <div>
+                <h4 className="font-display font-bold text-sm text-slate-900 flex items-center gap-2">
+                  <BarChart2 className="h-4 w-4 text-indigo-600" />
+                  Tabla Comparativa: Artículo Meng et al. (Tabla 2) vs. Simulador Didáctico
+                </h4>
+                <p className="text-[11px] text-slate-500 font-sans mt-0.5">
+                  Desglose de valores cinéticos, factores de escala temporal (1 día = 24 h) y justificación didáctica.
+                </p>
+              </div>
+              <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full font-mono text-[10px] font-semibold">
+                Factor de conversión: ×24 h/día
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs font-sans border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50/80 text-slate-700 font-mono text-[11px]">
+                    <th className="py-2.5 px-3 font-semibold">Parámetro / Concepto</th>
+                    <th className="py-2.5 px-3 font-semibold">Símbolo</th>
+                    <th className="py-2.5 px-3 font-semibold text-indigo-900">Artículo Meng et al. (Tabla 2)</th>
+                    <th className="py-2.5 px-3 font-semibold text-slate-800">Simulador Didáctico (Horas)</th>
+                    <th className="py-2.5 px-3 font-semibold">Factor / Observación</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-[11.5px]">
+                  <tr className="hover:bg-slate-50/50">
+                    <td className="py-2.5 px-3 font-medium text-slate-900">Capacidad basal GLUT</td>
+                    <td className="py-2.5 px-3 font-mono text-indigo-700 font-bold">V_in</td>
+                    <td className="py-2.5 px-3 font-mono font-semibold text-indigo-950">2.0 mM/día</td>
+                    <td className="py-2.5 px-3 font-mono text-slate-700">0.80 mM/h (19.2 mM/día)</td>
+                    <td className="py-2.5 px-3 text-slate-500">Escala didáctica acelerada para visualización en 48 h.</td>
+                  </tr>
+                  <tr className="hover:bg-slate-50/50">
+                    <td className="py-2.5 px-3 font-medium text-slate-900">Biogénesis mitocondrial</td>
+                    <td className="py-2.5 px-3 font-mono text-indigo-700 font-bold">α</td>
+                    <td className="py-2.5 px-3 font-mono font-semibold text-indigo-950">0.20 día⁻¹</td>
+                    <td className="py-2.5 px-3 font-mono text-slate-700">0.40 h⁻¹ (9.60 día⁻¹)</td>
+                    <td className="py-2.5 px-3 text-slate-500">Tasa de biogénesis y ensamblaje de crestas por glucosa.</td>
+                  </tr>
+                  <tr className="hover:bg-slate-50/50">
+                    <td className="py-2.5 px-3 font-medium text-slate-900">Recambio / Mitofagia</td>
+                    <td className="py-2.5 px-3 font-mono text-indigo-700 font-bold">γ</td>
+                    <td className="py-2.5 px-3 font-mono font-semibold text-indigo-950">0.10 día⁻¹</td>
+                    <td className="py-2.5 px-3 font-mono text-slate-700">0.30 h⁻¹ (7.20 día⁻¹)</td>
+                    <td className="py-2.5 px-3 text-slate-500">Depuración autofágica mitocondrial basal.</td>
+                  </tr>
+                  <tr className="hover:bg-slate-50/50">
+                    <td className="py-2.5 px-3 font-medium text-slate-900">Acoplamiento síntesis láctea</td>
+                    <td className="py-2.5 px-3 font-mono text-indigo-700 font-bold">k_L</td>
+                    <td className="py-2.5 px-3 font-mono font-semibold text-indigo-950">1.00</td>
+                    <td className="py-2.5 px-3 font-mono text-slate-700">0.50</td>
+                    <td className="py-2.5 px-3 text-slate-500">Eficiencia de acoplamiento de lactosa sintetasa y ATP.</td>
+                  </tr>
+                  <tr className="hover:bg-slate-50/50">
+                    <td className="py-2.5 px-3 font-medium text-slate-900">Aclaramiento / Secreción</td>
+                    <td className="py-2.5 px-3 font-mono text-indigo-700 font-bold">δ</td>
+                    <td className="py-2.5 px-3 font-mono font-semibold text-indigo-950">0.80 día⁻¹</td>
+                    <td className="py-2.5 px-3 font-mono text-slate-700">0.25 h⁻¹ (6.00 día⁻¹)</td>
+                    <td className="py-2.5 px-3 text-slate-500">Tasa de vaciado alveolar por succión o expresión láctea.</td>
+                  </tr>
+                  <tr className="hover:bg-slate-50/50">
+                    <td className="py-2.5 px-3 font-medium text-slate-900">Rango de Sensibilidad</td>
+                    <td className="py-2.5 px-3 font-mono text-indigo-700 font-bold">S_I</td>
+                    <td className="py-2.5 px-3 font-mono font-semibold text-indigo-950">Rango [0.1, 1.0]</td>
+                    <td className="py-2.5 px-3 font-mono text-slate-700">Rango [0.1, 1.0] (extensible a 2.0)</td>
+                    <td className="py-2.5 px-3 text-slate-500">0.10: Resistencia severa; 1.00: Normosensible control.</td>
+                  </tr>
+                  <tr className="hover:bg-slate-50/50">
+                    <td className="py-2.5 px-3 font-medium text-slate-900">Horizonte Temporal</td>
+                    <td className="py-2.5 px-3 font-mono text-indigo-700 font-bold">t_max, Δt</td>
+                    <td className="py-2.5 px-3 font-mono font-semibold text-indigo-950">14 días (Δt = 0.05 días)</td>
+                    <td className="py-2.5 px-3 font-mono text-slate-700">48 horas (Δt = 0.2 horas)</td>
+                    <td className="py-2.5 px-3 text-slate-500">El simulador permite alternar libremente entre ambas unidades.</td>
+                  </tr>
+                  <tr className="hover:bg-slate-50/50 bg-indigo-50/30">
+                    <td className="py-2.5 px-3 font-medium text-indigo-950">Escenarios preconfigurados</td>
+                    <td className="py-2.5 px-3 font-mono text-indigo-700 font-bold">Presets</td>
+                    <td className="py-2.5 px-3 font-mono text-slate-600">Estudio biológico clínico</td>
+                    <td className="py-2.5 px-3 font-mono text-indigo-900 font-semibold">5 Escenarios didácticos</td>
+                    <td className="py-2.5 px-3 text-slate-600">Meng et al. demuestra el mecanismo patofisiológico; los 5 presets son casos didácticos para experimentación.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ================= NAVIGATION SUBTABS ================= */}
       <div className="flex justify-center">
@@ -752,17 +1026,19 @@ export default function BiotechOdeSimulator() {
               <h4 className="font-display font-bold text-sm text-slate-900 flex items-center gap-2">
                 <Sliders className="h-4 w-4 text-indigo-600" /> Parámetros del Bioproceso
               </h4>
-              <button
-                onClick={() => setParams(DEFAULT_PARAMS)}
-                className="text-[11px] text-slate-500 hover:text-indigo-600 flex items-center gap-1 font-mono transition"
-                title="Reiniciar a valores normales"
-              >
-                <RotateCcw className="h-3 w-3" /> Reset
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setParams(DEFAULT_PARAMS)}
+                  className="text-[11px] text-slate-500 hover:text-indigo-600 flex items-center gap-1 font-mono transition"
+                  title="Reiniciar a valores canónicos"
+                >
+                  <RotateCcw className="h-3 w-3" /> Reset
+                </button>
+              </div>
             </div>
 
             {/* Slider 1: S_I Insulin Sensitivity */}
-            <div className="space-y-1.5 p-3 rounded-2xl bg-indigo-50/50 border border-indigo-100">
+            <div className="space-y-2 p-3.5 rounded-2xl bg-indigo-50/50 border border-indigo-100">
               <div className="flex justify-between items-center text-xs font-sans">
                 <span className="font-bold text-indigo-950 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-indigo-600 animate-pulse" />
@@ -774,8 +1050,8 @@ export default function BiotechOdeSimulator() {
               </div>
               <input
                 type="range"
-                min="0.05"
-                max="2.0"
+                min="0.10"
+                max={allowExtendedSI ? 2.0 : 1.0}
                 step="0.05"
                 value={params.SI}
                 onChange={(e) => {
@@ -784,10 +1060,26 @@ export default function BiotechOdeSimulator() {
                 }}
                 className="w-full h-1.5 bg-indigo-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
               />
-              <div className="flex justify-between text-[10px] text-slate-400 font-mono">
-                <span>0.05 (Resistencia severa)</span>
-                <span>1.0 (Normal)</span>
-                <span>2.0 (Hipersensible)</span>
+              <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+                <span>0.10 (Resistencia severa)</span>
+                <span>0.50 (Leve)</span>
+                <span>1.00 (Normosensible)</span>
+                {allowExtendedSI && <span className="text-indigo-700 font-bold">2.00 (Hipersensible)</span>}
+              </div>
+
+              {/* Extended SI range toggle */}
+              <div className="pt-2 border-t border-indigo-100/60 flex items-center justify-between text-[11px] text-slate-600 font-sans">
+                <span>Rango canónico del artículo: [0.1, 1.0]</span>
+                <button
+                  onClick={() => setAllowExtendedSI(!allowExtendedSI)}
+                  className={`text-[10px] font-mono px-2 py-0.5 rounded-md border transition cursor-pointer ${
+                    allowExtendedSI 
+                      ? 'bg-indigo-600 text-white border-indigo-700' 
+                      : 'bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-50'
+                  }`}
+                >
+                  {allowExtendedSI ? 'Extendido activo (hasta 2.0)' : 'Extender a 2.0'}
+                </button>
               </div>
             </div>
 
@@ -798,7 +1090,7 @@ export default function BiotechOdeSimulator() {
               <div className="space-y-1">
                 <div className="flex justify-between text-slate-700">
                   <span>Insulina Extracelular (I):</span>
-                  <span className="font-mono font-semibold">{params.I.toFixed(2)}</span>
+                  <span className="font-mono font-semibold">{params.I.toFixed(2)} [relativa]</span>
                 </div>
                 <input
                   type="range"
@@ -815,12 +1107,12 @@ export default function BiotechOdeSimulator() {
               <div className="space-y-1">
                 <div className="flex justify-between text-slate-700">
                   <span>Capacidad Basal GLUT (V_in):</span>
-                  <span className="font-mono font-semibold">{params.Vin.toFixed(2)} mM/h</span>
+                  <span className="font-mono font-semibold">{params.Vin.toFixed(2)} {rateLabel}</span>
                 </div>
                 <input
                   type="range"
                   min="0.2"
-                  max="2.0"
+                  max={timeUnit === 'days' ? 5.0 : 2.0}
                   step="0.05"
                   value={params.Vin}
                   onChange={(e) => setParams(prev => ({ ...prev, Vin: parseFloat(e.target.value) }))}
@@ -832,11 +1124,11 @@ export default function BiotechOdeSimulator() {
               <div className="space-y-1">
                 <div className="flex justify-between text-slate-700">
                   <span>Biogénesis Mitocondrial (α):</span>
-                  <span className="font-mono font-semibold">{params.alpha.toFixed(2)}</span>
+                  <span className="font-mono font-semibold">{params.alpha.toFixed(2)} {decayLabel}</span>
                 </div>
                 <input
                   type="range"
-                  min="0.1"
+                  min="0.05"
                   max="1.0"
                   step="0.05"
                   value={params.alpha}
@@ -849,13 +1141,13 @@ export default function BiotechOdeSimulator() {
               <div className="space-y-1">
                 <div className="flex justify-between text-slate-700">
                   <span>Recambio / Mitofagia (γ):</span>
-                  <span className="font-mono font-semibold">{params.gamma.toFixed(2)} h⁻¹</span>
+                  <span className="font-mono font-semibold">{params.gamma.toFixed(2)} {decayLabel}</span>
                 </div>
                 <input
                   type="range"
-                  min="0.1"
-                  max="0.8"
-                  step="0.05"
+                  min="0.02"
+                  max={timeUnit === 'days' ? 0.5 : 0.8}
+                  step="0.01"
                   value={params.gamma}
                   onChange={(e) => setParams(prev => ({ ...prev, gamma: parseFloat(e.target.value) }))}
                   className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
@@ -871,7 +1163,7 @@ export default function BiotechOdeSimulator() {
                 <input
                   type="range"
                   min="0.1"
-                  max="1.2"
+                  max="1.5"
                   step="0.05"
                   value={params.kL}
                   onChange={(e) => setParams(prev => ({ ...prev, kL: parseFloat(e.target.value) }))}
@@ -883,12 +1175,12 @@ export default function BiotechOdeSimulator() {
               <div className="space-y-1">
                 <div className="flex justify-between text-slate-700">
                   <span>Tasa de Secreción / Succión (δ):</span>
-                  <span className="font-mono font-semibold">{params.delta.toFixed(2)} h⁻¹</span>
+                  <span className="font-mono font-semibold">{params.delta.toFixed(2)} {decayLabel}</span>
                 </div>
                 <input
                   type="range"
                   min="0.05"
-                  max="0.6"
+                  max={timeUnit === 'days' ? 1.5 : 0.6}
                   step="0.05"
                   value={params.delta}
                   onChange={(e) => setParams(prev => ({ ...prev, delta: parseFloat(e.target.value) }))}
@@ -902,11 +1194,11 @@ export default function BiotechOdeSimulator() {
             <div className="pt-3 border-t border-slate-200 space-y-2 text-[11px] font-mono text-slate-600 bg-slate-50 p-3 rounded-2xl">
               <div className="flex justify-between">
                 <span>Flujo de Entrada J_in:</span>
-                <strong className="text-slate-900">{equilibrium.Jin.toFixed(3)} mM/h</strong>
+                <strong className="text-slate-900">{equilibrium.Jin.toFixed(3)} {rateLabel}</strong>
               </div>
               <div className="flex justify-between">
                 <span>Integrador Numérico:</span>
-                <span className="text-indigo-600 font-semibold">Runge-Kutta 4 (h = {hStep}h)</span>
+                <span className="text-indigo-600 font-semibold">Runge-Kutta 4 (h = {hStep}{timeSuffix})</span>
               </div>
             </div>
 
@@ -924,7 +1216,7 @@ export default function BiotechOdeSimulator() {
                     Producción y Secreción de Leche: L(t)
                   </h4>
                   <p className="text-[11px] text-slate-500 font-sans">
-                    Comparación dinámica entre el modelo actual (línea continua ámbar) y el control sano normosensible (línea punteada gris).
+                    Comparación dinámica entre el modelo actual (línea continua ámbar) y el control sano normosensible (línea punteada gris) en escala de {timeLabel}.
                   </p>
                 </div>
                 <div className="flex items-center gap-3 text-xs font-mono">
@@ -961,13 +1253,13 @@ export default function BiotechOdeSimulator() {
                   })}
 
                   {/* Time Axis Grid */}
-                  {[0, 12, 24, 36, 48].map((tVal) => {
+                  {timeTicks.map((tVal) => {
                     const x = scaleX(tVal);
                     return (
                       <g key={`l-tgrid-${tVal}`}>
                         <line x1={x} y1={padding.top} x2={x} y2={padding.top + plotH} stroke="#1e293b" strokeDasharray="2 2" />
                         <text x={x} y={svgHeight - 10} textAnchor="middle" fill="#64748b" fontSize="9" fontFamily="monospace">
-                          {tVal}h
+                          {tVal}{timeSuffix}
                         </text>
                       </g>
                     );
@@ -1025,7 +1317,7 @@ export default function BiotechOdeSimulator() {
                     Dinámica Intracelular: Glucosa G(t) & Mitocondria M(t)
                   </h4>
                   <p className="text-[11px] text-slate-500 font-sans">
-                    Nivel de combustible celular (G, línea esmeralda) y maquinaria oxidativa de ATP (M, línea violeta).
+                    Nivel de combustible celular (G, línea esmeralda) y maquinaria oxidativa de ATP (M, línea violeta) en {timeLabel}.
                   </p>
                 </div>
                 <div className="flex items-center gap-3 text-xs font-mono">
@@ -1058,13 +1350,13 @@ export default function BiotechOdeSimulator() {
                   })}
 
                   {/* Time Axis Grid */}
-                  {[0, 12, 24, 36, 48].map((tVal) => {
+                  {timeTicks.map((tVal) => {
                     const x = scaleX(tVal);
                     return (
                       <g key={`gm-tgrid-${tVal}`}>
                         <line x1={x} y1={padding.top} x2={x} y2={padding.top + plotH} stroke="#1e293b" strokeDasharray="2 2" />
                         <text x={x} y={svgHeight - 10} textAnchor="middle" fill="#64748b" fontSize="9" fontFamily="monospace">
-                          {tVal}h
+                          {tVal}{timeSuffix}
                         </text>
                       </g>
                     );
@@ -1172,7 +1464,7 @@ export default function BiotechOdeSimulator() {
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
               <strong className="text-indigo-900 font-mono text-xs block">Paso 1: Flujo de entrada insulino-dependiente J_in</strong>
               <div className="p-3 bg-white border rounded-xl font-mono text-slate-800">
-                J_in(S_I) = V_in · [1 + (S_I · I) / (K_I + I)] = {params.Vin} · [1 + ({params.SI} · {params.I}) / ({params.KI} + {params.I})] = <strong>{equilibrium.Jin.toFixed(4)} mM/h</strong>
+                J_in(S_I) = V_in · [1 + (S_I · I) / (K_I + I)] = {params.Vin} · [1 + ({params.SI} · {params.I}) / ({params.KI} + {params.I})] = <strong>{equilibrium.Jin.toFixed(4)} {rateLabel}</strong>
               </div>
               <p className="text-slate-600 text-[11px] leading-relaxed">
                 El transportador GLUT posee una cinética tipo Michaelis-Menten estimulada por el receptor de insulina acoplado al índice de sensibilidad S_I.
