@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Play, RotateCcw, LineChart, HelpCircle, Activity, ArrowRight, BookOpen, Layers, Sliders, Clock, Thermometer, ShieldAlert, Brain, Zap, RefreshCw, Pause, CheckCircle2, AlertTriangle, ChevronDown, ListPlus, Flame, MoveRight, Eye, Calculator } from 'lucide-react';
+import { Play, RotateCcw, LineChart, HelpCircle, Activity, ArrowRight, BookOpen, Layers, Sliders, Clock, Thermometer, ShieldAlert, Brain, Zap, RefreshCw, Pause, CheckCircle2, AlertTriangle, ChevronDown, ListPlus, Flame, MoveRight, Eye, Calculator, Dna } from 'lucide-react';
 import { lex, parse, compileExpression, Token } from '../utils/mathParser';
+import BiotechOdeSimulator from './BiotechOdeSimulator';
 
 // ==================== INTERFACES & DEFINITIONS ====================
 
@@ -203,7 +204,7 @@ function nnApplyGradients(net: NNNetwork, lr: number, m: number, weightDecay: nu
 }
 
 export default function InteractiveSandbox() {
-  const [activeTab, setActiveTab] = useState<'limit' | 'forensic' | 'derivative' | 'riemann' | 'incremental' | 'differential' | 'ode' | 'neuralLimit' | 'music'>('limit');
+  const [activeTab, setActiveTab] = useState<'limit' | 'forensic' | 'derivative' | 'riemann' | 'incremental' | 'differential' | 'ode' | 'neuralLimit' | 'music' | 'biotech'>('limit');
 
   // ==================== NEURAL NETWORK LIMITS STATES ====================
   const [nnTargetFnId, setNnTargetFnId] = useState<'hole' | 'jump' | 'smooth'>('hole');
@@ -1525,6 +1526,17 @@ export default function InteractiveSandbox() {
               }`}
             >
               9. Cálculo y Música (Beethoven)
+            </button>
+            <button
+              onClick={() => setActiveTab('biotech')}
+              className={`px-3 py-2 rounded-xl text-xs font-semibold font-display transition-all duration-300 pointer-events-auto cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'biotech'
+                  ? 'bg-indigo-900 text-white shadow-md'
+                  : 'text-slate-600 hover:text-indigo-900 hover:bg-slate-200/50'
+              }`}
+            >
+              <Dna className="h-3 w-3 text-indigo-400" />
+              10. Biotecnología: Meng et al. (Lactogénesis & EDOs)
             </button>
           </div>
         </div>
@@ -7062,6 +7074,11 @@ export default function InteractiveSandbox() {
             </div>
           );
         })()}
+
+        {/* ==================================== TAB 10: BIOTECHNOLOGY ODE SIMULATOR (MENG ET AL.) ==================================== */}
+        {activeTab === 'biotech' && (
+          <BiotechOdeSimulator />
+        )}
 
         {/* ==================================== ACADEMIC LaTeX PDF SCIENTIFIC REPORT OVERLAY ==================================== */}
         {showReport && (
