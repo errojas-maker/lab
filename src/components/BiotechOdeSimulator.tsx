@@ -1569,7 +1569,7 @@ export default function BiotechOdeSimulator() {
                     Meng et al. observaron una menor expresión de conjuntos de genes mitocondriales en glándula mamaria al día 2 postparto (en una muestra exploratoria pequeña), así como un aumento del volumen mitocondrial al estimular células epiteliales mamarias con insulina in vitro.
                   </p>
                   <div className="text-[11px] text-slate-500 font-mono pt-1 border-t border-slate-100">
-                    Método: Análisis de expresión génica en biopsias mamarias (día 2 postparto) y microscopía en cultivo celular in vitro.
+                    Método: Análisis de expresión génica en biopsias mamarias (día 2 postparto) y medición de volumen mitocondrial en cultivo.
                   </div>
                 </div>
 
@@ -1774,7 +1774,7 @@ export default function BiotechOdeSimulator() {
                   <tr className="hover:bg-slate-50/50">
                     <td className="py-3 px-3 font-medium text-slate-900">Activación de la Lactogénesis II</td>
                     <td className="py-3 px-3 font-mono text-indigo-700">dL/dt = k_L·G·M - δ·L</td>
-                    <td className="py-3 px-3 font-mono">L_eq cae de 9.66 a 6.63 UA (-31.4%)</td>
+                    <td className="py-3 px-3 font-mono">L_eq cae de 9.66 a 6.63 UA (-31.4%); a t = 3 d, L cae de 6.56 a 4.21 UA (-35.8%)</td>
                     <td className="py-3 px-3 text-slate-700">Activación secretora más tardía (2.8 frente a 2.5 días postparto) asociada a resistencia (LAR)</td>
                     <td className="py-3 px-3 text-slate-500 font-mono">Cuestionarios clínicos de lactancia, LAR</td>
                     <td className="py-3 px-3 text-indigo-700 font-semibold flex items-center gap-1">
@@ -1809,7 +1809,7 @@ export default function BiotechOdeSimulator() {
                     <td className="py-3 px-3 font-mono text-indigo-700">J_in = V_in·[1 + S_I·I/(K_I+I)]</td>
                     <td className="py-3 px-3 font-mono">J_in cae de 3.00 a 2.10 mM/día en resistencia severa</td>
                     <td className="py-3 px-3 text-slate-700">Resistencia a la insulina asociada a menor respuesta funcional mamaria</td>
-                    <td className="py-3 px-3 text-slate-500 font-mono">Correlación clínica con biomarcador LAR</td>
+                    <td className="py-3 px-3 text-slate-500 font-mono">No medido por Meng et al.</td>
                     <td className="py-3 px-3 text-indigo-700 font-semibold flex items-center gap-1">
                       <CheckCircle2 className="h-3.5 w-3.5 text-indigo-600 inline" /> Inferencia didáctica
                     </td>
