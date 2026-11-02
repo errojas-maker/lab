@@ -1425,7 +1425,7 @@ export default function BiotechOdeSimulator() {
               </h4>
               <p className="text-xs text-slate-600 leading-relaxed font-sans">
                 <strong>Meng et al. (Hallazgo reportado):</strong> Reporta asociación observacional entre resistencia a la insulina (evaluada mediante LAR) y un inicio más tardío de la activación secretora (tiempo medio de 2.8 frente a 2.5 días postparto).<br />
-                <strong>Modelo EDO (Inferencia didáctica):</strong> Con S_I = 0.10, la curva L(t) asciende con menor pendiente y el estado estacionario L_eq cae de 9.66 a 6.63 UA (reducción del 31.4%).
+                <strong>Modelo EDO (Inferencia didáctica):</strong> Con S_I = 0.10, el control asciende más rápido que la condición resistente en los primeros días y el estado estacionario L_eq cae de 9.66 a 6.63 UA (reducción del 31.4%).
               </p>
             </div>
 
@@ -1440,8 +1440,8 @@ export default function BiotechOdeSimulator() {
                 Expresión y Biomasa Mitocondrial
               </h4>
               <p className="text-xs text-slate-600 leading-relaxed font-sans">
-                <strong>Meng et al. (Hallazgo reportado):</strong> Observa expresión reducida de genes mitocondriales en glándula mamaria al día 2 (muestras pequeñas) y aumento de volumen mitocondrial con insulina en cultivos celulares.<br />
-                <strong>Modelo EDO (Inferencia didáctica):</strong> Con dM/dt = α·G - γ·M, la menor entrada de glucosa reduce M_eq a 3.26 en resistencia severa; en el preset de disfunción mitocondrial (S_I = 0.90, I = 1.0, α = 0.10, γ = 0.22 ⟹ G_eq ≈ 3.824 mM), M_eq = (0.10/0.22) · 3.824 ≈ 1.74.
+                <strong>Meng et al. (Hallazgo reportado):</strong> Observa expresión reducida de genes mitocondriales en glándula mamaria al día 2 (muestras pequeñas) y aumento de volumen mitocondrial con insulina in vitro en células MCF-12A y HC11.<br />
+                <strong>Modelo EDO (Inferencia didáctica):</strong> Con dM/dt = α·G - γ·M, la menor entrada de glucosa reduce M_eq a 3.26 en resistencia severa; en el preset de disfunción mitocondrial (S_I = 0.90, I = 1.0, α = 0.10, γ = 0.22), la capacidad mitocondrial en equilibrio responde a la expresión simbólica M_eq = (α/γ)·G_eq.
               </p>
             </div>
 
@@ -1472,7 +1472,7 @@ export default function BiotechOdeSimulator() {
                 Resistencia e Hiperinsulinemia
               </h4>
               <p className="text-xs text-slate-600 leading-relaxed font-sans">
-                <strong>Meng et al. (Hallazgo reportado):</strong> Describe resistencia a la insulina con respuesta tisular mamaria disminuida y retraso en la activación secretora.<br />
+                <strong>Meng et al. (Hallazgo reportado):</strong> Meng et al. asocian la resistencia a la insulina con retraso en la activación secretora; no miden transporte de glucosa.<br />
                 <strong>Modelo EDO (Inferencia didáctica):</strong> En el flujo saturable J_in(S_I), elevar I = 3.0 con S_I = 0.35 genera J_in = 2.525 mM/día, sin alcanzar los 3.00 mM/día del control normosensible.
               </p>
             </div>
@@ -1534,7 +1534,7 @@ export default function BiotechOdeSimulator() {
                     dL/dt = k_L · G · M - δ · L
                   </div>
                   <p className="text-slate-700 leading-relaxed">
-                    Valores obtenidos integrando numéricamente el modelo mediante RK4 (Δt = 0.05 d, G(0) = 0.50, M(0) = 0.80, L(0) = 0.20): en control normosensible (S_I = 1.00), a t = 3.0 días se obtiene L(3.0 d) = 6.56 UA (con G = 3.68 mM y M = 2.14) con convergencia a L_eq ≈ 9.66 UA. En cambio, bajo resistencia severa (S_I = 0.10), a t = 3.0 días se obtiene L(3.0 d) = 4.21 UA (con G = 2.87 mM y M = 1.76), lo que representa una producción láctea un 35.8% menor al tercer día y converge asintóticamente a L_eq ≈ 6.63 UA (reducción del 31.4%), representando cualitativamente el retraso temporal en la activación secretora.
+                    En la simulación temporal, el control asciende más rápido que la condición resistente en los primeros días; con resistencia severa (S_I = 0.10), la curva L(t) muestra menor pendiente inicial y converge asintóticamente a un estado estacionario L_eq ≈ 6.63 UA (reducción del 31.4% respecto al control normosensible L_eq ≈ 9.66 UA), representando didácticamente el retraso temporal en la activación secretora.
                   </p>
                   <div className="text-[11px] text-slate-500 font-mono pt-1 border-t border-slate-100">
                     Parámetros canónicos didácticos: k_L = 1.00, δ = 0.80 día⁻¹, t_max = 14 días.
@@ -1566,10 +1566,10 @@ export default function BiotechOdeSimulator() {
                     <BookOpen className="h-3.5 w-3.5 text-indigo-600" /> Hallazgo reportado (Meng et al., JCI)
                   </strong>
                   <p className="text-slate-700 leading-relaxed">
-                    Meng et al. observaron una menor expresión de conjuntos de genes mitocondriales en glándula mamaria al día 2 postparto (en una muestra exploratoria pequeña), así como un aumento del volumen mitocondrial al estimular células epiteliales mamarias con insulina in vitro.
+                    Meng et al. observaron una menor expresión de conjuntos de genes mitocondriales en glándula mamaria al día 2 postparto (en una muestra exploratoria pequeña), así como un aumento del volumen mitocondrial al estimular con insulina in vitro en células MCF-12A y HC11.
                   </p>
                   <div className="text-[11px] text-slate-500 font-mono pt-1 border-t border-slate-100">
-                    Método: Análisis de expresión génica en biopsias mamarias (día 2 postparto) y medición de volumen mitocondrial en cultivo.
+                    Método: Análisis de expresión génica en biopsias mamarias (día 2 postparto) y medición de volumen mitocondrial en cultivo in vitro (células MCF-12A y HC11).
                   </div>
                 </div>
 
@@ -1584,7 +1584,7 @@ export default function BiotechOdeSimulator() {
                     dM/dt = α · G - γ · M ⟹ M_eq = (α / γ) · G_eq
                   </div>
                   <p className="text-slate-700 leading-relaxed">
-                    Donde α es la tasa de biogénesis mitocondrial y γ es la tasa de recambio. En el control sano (S_I = 1.0), M_eq = 2.000 · G_eq ≈ 3.932. En resistencia severa (S_I = 0.10), al disminuir el combustible intramamario, M_eq cae a 3.256. Si además se simula el preset de disfunción mitocondrial primaria (S_I = 0.90, I = 1.0, α = 0.10, γ = 0.22 ⟹ G_eq ≈ 3.824 mM), el cálculo analítico del modelo arroja M_eq = (0.10 / 0.22) · 3.8240 ≈ 1.74 (1.738) y L_eq ≈ 8.31 UA (frente a 3.93 y 9.66 en control sano), modelando didácticamente el déficit bioenergético mitocondrial.
+                    Donde α es la tasa de biogénesis mitocondrial y γ es la tasa de recambio. En el control sano (S_I = 1.0), M_eq = 2.000 · G_eq ≈ 3.932. En resistencia severa (S_I = 0.10), al disminuir el combustible intramamario, M_eq cae a 3.256. Si además se simula el preset de disfunción mitocondrial primaria (S_I = 0.90, I = 1.0, α = 0.10, γ = 0.22), la capacidad mitocondrial en equilibrio responde a la expresión analítica M_eq = (α / γ) · G_eq, modelando didácticamente el déficit bioenergético mitocondrial.
                   </p>
                   <div className="text-[11px] text-slate-500 font-mono pt-1 border-t border-slate-100">
                     Parámetros canónicos didácticos: α = 0.20 día⁻¹, γ = 0.10 día⁻¹. Relación basal α/γ = 2.0.
@@ -1616,7 +1616,7 @@ export default function BiotechOdeSimulator() {
                     <BookOpen className="h-3.5 w-3.5 text-indigo-600" /> Hallazgo reportado (Meng et al., JCI)
                   </strong>
                   <p className="text-slate-700 leading-relaxed">
-                    Meng et al. demostraron en modelos celulares epiteliales mamarios in vitro que la insulina incrementa la tasa de consumo celular de oxígeno, evidenciando un estímulo hormonal directo sobre la función metabólica mitocondrial.
+                    Meng et al. demostraron en modelos celulares epiteliales mamarios que la insulina incrementa la tasa de consumo celular de oxígeno (in vitro), evidenciando un estímulo hormonal directo sobre la función metabólica mitocondrial.
                   </p>
                   <div className="text-[11px] text-slate-500 font-mono pt-1 border-t border-slate-100">
                     Método: Cuantificación del consumo celular de oxígeno en cultivos celulares epiteliales in vitro.
@@ -1666,7 +1666,7 @@ export default function BiotechOdeSimulator() {
                     <BookOpen className="h-3.5 w-3.5 text-indigo-600" /> Hallazgo reportado (Meng et al., JCI)
                   </strong>
                   <p className="text-slate-700 leading-relaxed">
-                    Meng et al. observaron que las mujeres con resistencia a la insulina presentan un retraso en la activación secretora, indicando una falta de respuesta funcional del tejido mamario.
+                    Meng et al. asociaron la resistencia a la insulina con un inicio más tardío de la activación secretora.
                   </p>
                   <div className="text-[11px] text-slate-500 font-mono pt-1 border-t border-slate-100">
                     Método: Cuantificación del biomarcador clínico de resistencia a la insulina (índice LAR) y registro temporal del inicio de la lactogénesis.
@@ -1774,7 +1774,7 @@ export default function BiotechOdeSimulator() {
                   <tr className="hover:bg-slate-50/50">
                     <td className="py-3 px-3 font-medium text-slate-900">Activación de la Lactogénesis II</td>
                     <td className="py-3 px-3 font-mono text-indigo-700">dL/dt = k_L·G·M - δ·L</td>
-                    <td className="py-3 px-3 font-mono">L_eq cae de 9.66 a 6.63 UA (-31.4%); a t = 3 d, L cae de 6.56 a 4.21 UA (-35.8%)</td>
+                    <td className="py-3 px-3 font-mono">L_eq cae de 9.66 a 6.63 UA (-31.4%); el control asciende más rápido en los primeros días</td>
                     <td className="py-3 px-3 text-slate-700">Activación secretora más tardía (2.8 frente a 2.5 días postparto) asociada a resistencia (LAR)</td>
                     <td className="py-3 px-3 text-slate-500 font-mono">Cuestionarios clínicos de lactancia, LAR</td>
                     <td className="py-3 px-3 text-indigo-700 font-semibold flex items-center gap-1">
@@ -1785,7 +1785,7 @@ export default function BiotechOdeSimulator() {
                   <tr className="hover:bg-slate-50/50">
                     <td className="py-3 px-3 font-medium text-slate-900">Biomasa y Genes Mitocondriales</td>
                     <td className="py-3 px-3 font-mono text-indigo-700">dM/dt = α·G - γ·M</td>
-                    <td className="py-3 px-3 font-mono">M_eq cae de 3.93 a 3.26 en resistencia severa (o a 1.74 en preset disfunción mitocondrial: S_I = 0.90, α = 0.10, γ = 0.22)</td>
+                    <td className="py-3 px-3 font-mono">M_eq cae de 3.93 a 3.26 en resistencia severa (en preset disfunción mitocondrial satisface M_eq = (α/γ)·G_eq)</td>
                     <td className="py-3 px-3 text-slate-700">Menor expresión de genes mitocondriales en día 2; aumento de biomasa mitocondrial con insulina in vitro</td>
                     <td className="py-3 px-3 text-slate-500 font-mono">Expresión génica en biopsias (día 2), cultivo celular</td>
                     <td className="py-3 px-3 text-indigo-700 font-semibold flex items-center gap-1">
@@ -1799,8 +1799,15 @@ export default function BiotechOdeSimulator() {
                     <td className="py-3 px-3 font-mono">Síntesis láctea acoplada al soporte bioenergético</td>
                     <td className="py-3 px-3 text-slate-700">Aumento del consumo de oxígeno celular estimulado por insulina in vitro</td>
                     <td className="py-3 px-3 text-slate-500 font-mono">Consumo celular de O₂ en cultivo de células mamarias</td>
-                    <td className="py-3 px-3 text-indigo-700 font-semibold flex items-center gap-1">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-indigo-600 inline" /> Inferencia didáctica
+                    <td className="py-3 px-3 font-semibold space-y-1">
+                      <div className="flex items-center gap-1 text-amber-700">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-amber-600 inline shrink-0" />
+                        <span>Hallazgo reportado (consumo O₂ in vitro)</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-indigo-700">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-indigo-600 inline shrink-0" />
+                        <span>Inferencia didáctica (síntesis láctea)</span>
+                      </div>
                     </td>
                   </tr>
 
@@ -1820,7 +1827,7 @@ export default function BiotechOdeSimulator() {
                     <td className="py-3 px-3 font-mono text-indigo-700">I = 3.0, S_I = 0.35</td>
                     <td className="py-3 px-3 font-mono">J_in solo sube a 2.525 mM/día (&lt;3.00)</td>
                     <td className="py-3 px-3 text-slate-700">Resistencia a la insulina asociada a retraso secretor; la hiperinsulinemia modelada teóricamente no restablece el influjo basal</td>
-                    <td className="py-3 px-3 text-slate-500 font-mono">Insulina plasmática vs. LAR</td>
+                    <td className="py-3 px-3 text-slate-500 font-mono">No medido por Meng et al.</td>
                     <td className="py-3 px-3 text-indigo-700 font-semibold flex items-center gap-1">
                       <CheckCircle2 className="h-3.5 w-3.5 text-indigo-600 inline" /> Inferencia didáctica
                     </td>
@@ -1831,7 +1838,7 @@ export default function BiotechOdeSimulator() {
                     <td className="py-3 px-3 font-mono text-indigo-800 font-bold">L_eq = [(k_L·α)/(δ·γ)] · G_eq²</td>
                     <td className="py-3 px-3 font-mono text-indigo-900 font-bold">ΔG = -17.2% ⟹ ΔL = -31.4%</td>
                     <td className="py-3 px-3 text-indigo-950">Asociación no lineal observacional entre grado de resistencia y déficit lactogénico</td>
-                    <td className="py-3 px-3 text-indigo-900 font-mono">Análisis estadístico de cohortes clínicas</td>
+                    <td className="py-3 px-3 text-slate-500 font-mono">No medido por Meng et al.</td>
                     <td className="py-3 px-3 text-indigo-700 font-semibold flex items-center gap-1">
                       <CheckCircle2 className="h-3.5 w-3.5 text-indigo-600 inline" /> Inferencia didáctica
                     </td>
@@ -1888,8 +1895,8 @@ export default function BiotechOdeSimulator() {
                   Punto de Inflexión: Activación Secretora (Lactogénesis II)
                 </h5>
                 <ul className="text-xs text-slate-700 space-y-2 font-sans leading-relaxed">
-                  <li>• <strong>Control Normosensible (S_I = 1.00):</strong> La integración numérica RK4 (Δt = 0.05 d) arroja L(3.0 d) = 6.56 UA (con G = 3.68 mM y M = 2.14). Rápido despegue de síntesis láctea sustentado por biogénesis mitocondrial.</li>
-                  <li>• <strong>Resistencia a la Insulina (S_I = 0.10):</strong> La integración RK4 arroja L(3.0 d) = 4.21 UA (con G = 2.87 mM y M = 1.76), una reducción del 35.8% en la masa acumulada de leche al tercer día, modelando de forma didáctica el retraso en el inicio secretor reportado por Meng et al. (tiempo medio de 2.8 frente a 2.5 días en controles evaluado con LAR).</li>
+                  <li>• <strong>Control Normosensible (S_I = 1.00):</strong> El control asciende más rápido que la condición resistente en los primeros días, con un rápido despegue de la síntesis láctea sustentado por la biogénesis mitocondrial.</li>
+                  <li>• <strong>Resistencia a la Insulina (S_I = 0.10):</strong> La curva L(t) asciende con menor pendiente inicial y retraso en el despegue acumulado, modelando de forma didáctica el retraso en el inicio secretor reportado por Meng et al. (tiempo medio de 2.8 frente a 2.5 días en controles evaluado con LAR).</li>
                   <li>• Representa la ventana crítica para el establecimiento del volumen lácteo.</li>
                 </ul>
               </div>
@@ -1907,7 +1914,7 @@ export default function BiotechOdeSimulator() {
                 </h5>
                 <ul className="text-xs text-slate-600 space-y-2 font-sans leading-relaxed">
                   <li>• <strong>Control Normosensible:</strong> Convergencia asintótica estable al equilibrio L_eq ≈ 9.66 UA.</li>
-                  <li>• <strong>Condición Resistente:</strong> Converge a un nivel menor en L_eq ≈ 6.63 UA (o L_eq ≈ 8.31 UA en el preset de disfunción mitocondrial con α = 0.10 y γ = 0.22).</li>
+                  <li>• <strong>Condición Resistente:</strong> Converge a un nivel menor en L_eq ≈ 6.63 UA (mientras que en el preset de disfunción mitocondrial primaria el equilibrio queda restringido por la relación analítica M_eq = (α/γ)·G_eq).</li>
                   <li>• El punto de equilibrio es localmente asintóticamente estable porque todos los autovalores tienen parte real estrictamente negativa (Re(λ_i) &lt; 0). El Teorema de Hartman-Grobman únicamente garantiza la equivalencia topológica local entre las trayectorias no lineales y la linealización en una vecindad del equilibrio.</li>
                 </ul>
               </div>
