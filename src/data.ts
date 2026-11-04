@@ -4,7 +4,7 @@ import avatarImg from './avatar.png';
 export const personalInfo = {
   name: 'Erick Radaí Rojas Maldonado',
   title: 'Doctor en Educación',
-  role: 'Profesor-Investigador Titular (28 años de trayectoria)',
+  role: 'Profesor-Investigador Titular (29 años de trayectoria)',
   institution: 'Universidad Michoacana de San Nicolás de Hidalgo (UMSNH)',
   faculty: 'Invitado en el Programa Institucional de Licenciatura en Biotecnología',
   location: 'Morelia, Michoacán, México',
@@ -14,7 +14,7 @@ export const personalInfo = {
   researchGate: 'https://www.researchgate.net/profile/Erick_Radai_Maldonado2?ev=hdr_xprf',
   phone: '+52 (443) 322-3500 ext. 4102',
   avatar: avatarImg,
-  bio: 'Profesor e Investigador Titular de la Universidad Michoacana de San Nicolás de Hidalgo (UMSNH), invitado en el Programa Institucional de Licenciatura en Biotecnología. Cuenta con más de 28 años de trayectoria docente, habiendo impartido más de 140 cursos a nivel medio superior, superior y posgrado. Es reconocido como Investigador Estatal Honorífico por el Instituto de Ciencia, Tecnología e Innovación (ICTI) del Gobierno del Estado de Michoacán de 2022 a la fecha.',
+  bio: 'Profesor e Investigador Titular de la Universidad Michoacana de San Nicolás de Hidalgo (UMSNH), invitado en el Programa Institucional de Licenciatura en Biotecnología. Cuenta con más de 29 años de trayectoria docente, habiendo impartido más de 240 cursos a nivel medio superior, superior y posgrado. Es reconocido como Investigador Estatal Honorífico por el Instituto de Ciencia, Tecnología e Innovación (ICTI) del Gobierno del Estado de Michoacán de 2022 a la fecha.',
   objective: 'Desarrollar mi experiencia hacia la coordinación y organización de gestión académica mejorando los proyectos educativos institucionales y los procesos formativos que se vinculen con la sociedad y con los parámetros de la evaluación educativa internacional.',
   aptitudes: [
     'Capacidad de análisis y observación',
@@ -178,8 +178,8 @@ export const experience: ExperienceItem[] = [
     location: 'Morelia, Michoacán',
     type: 'academic',
     description: [
-      'Docente destacado con 28 años de trayectoria en la enseñanza de las ciencias exactas.',
-      'Impartición de más de 140 cursos a nivel Medio Superior, Superior y Posgrado.',
+      'Docente destacado con 29 años de trayectoria en la enseñanza de las ciencias exactas.',
+      'Impartición de más de 240 cursos a nivel Medio Superior, Superior y Posgrado.',
       'Profesor Invitado en el Programa Institucional de Licenciatura en Biotecnología.',
       'Líder curricular en la actualización pedagógica de matemáticas y modelación experimental.'
     ],

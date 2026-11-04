@@ -25,7 +25,7 @@ export default function Hero({ setActiveSection }: HeroProps) {
   const metrics = [
     {
       label: 'Cursos Impartidos',
-      value: '+140 Cursos',
+      value: '+240 Cursos',
       subtext: 'Media Superior, Superior y Posgrado',
       icon: <Award className="h-5 w-5 text-amber-500" />
     },
@@ -37,7 +37,7 @@ export default function Hero({ setActiveSection }: HeroProps) {
     },
     {
       label: 'Docencia Superior',
-      value: '28 Años',
+      value: '29 Años',
       subtext: 'Trayectoria Docente',
       icon: <GraduationCap className="h-5 w-5 text-emerald-500" />
     }
@@ -197,7 +197,7 @@ export default function Hero({ setActiveSection }: HeroProps) {
                   <span className="font-display font-semibold text-slate-800 text-lg">{personalInfo.name}</span>
                   <span className="font-mono text-indigo-600 text-xs mt-0.5 tracking-wide">Doctor en Educación</span>
                   <p className="text-xs text-slate-400 mt-2 italic flex items-center justify-center gap-1">
-                    <Calendar className="h-3 w-3" /> Trayectoria de 28 años
+                    <Calendar className="h-3 w-3" /> Trayectoria de 29 años
                   </p>
                 </div>
 
